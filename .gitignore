@@ -1,0 +1,11 @@
+x64/
+.vs/
+
+*.sln
+*.vcxproj
+*.filters
+*.user
+*.hint
+
+main.c
+main.cpp
