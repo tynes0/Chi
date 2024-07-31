@@ -6,13 +6,7 @@
 
 #include <stdio.h>
 
-#ifdef _CHI_CPP
-_CHI_PRAGMA(warning(push))
-_CHI_PRAGMA(warning(disable : 4190))
-
-extern "C"
-{
-#endif // _CHI_CPP
+_CHI_HEADER_BEGIN
 
 /* CHI STRING BEGIN */
 
@@ -183,10 +177,6 @@ CHI_API chi_errno_t chi_sv_println(chi_string_view sv);
 
 /* CHI STRING VIEW END */
 
-#ifdef _CHI_CPP
-}
-
-_CHI_PRAGMA(warning(pop))
-#endif // _CHI_CPP
+_CHI_HEADER_END
 
 #endif // !_CHI_IO_

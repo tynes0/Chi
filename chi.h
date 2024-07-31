@@ -1341,55 +1341,463 @@ CHI_API chi_string* chi_reverse(chi_string* chi_str);
 
 /* CHI STRING VIEW BEGIN */
 
+/**
+ * @brief Creates a chi_string_view from a null-terminated C string.
+ *
+ * This function creates a chi_string_view that references the given null-terminated C string.
+ *
+ * @param data Pointer to the null-terminated C string.
+ * @return A chi_string_view referencing the provided C string.
+ */
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data);
+
+/**
+ * @brief Creates a chi_string_view from a C string with a specified size.
+ *
+ * This function creates a chi_string_view that references the given C string with the specified size.
+ *
+ * @param data Pointer to the C string.
+ * @param size Size of the C string.
+ * @return A chi_string_view referencing the provided C string.
+ */
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_n(const char* data, size_t size);
+
+/**
+ * @brief Creates a chi_string_view from a chi_string.
+ *
+ * This function creates a chi_string_view that references the data in the provided chi_string.
+ *
+ * @param chi_str Pointer to the chi_string.
+ * @return A chi_string_view referencing the data in the provided chi_string.
+ */
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_from_chi_s(const chi_string* chi_str);
- 
+
+/**
+ * @brief Gets the data pointer of the chi_string_view.
+ *
+ * This function returns the data pointer of the chi_string_view.
+ *
+ * @param sv The chi_string_view to get the data pointer from.
+ * @return The data pointer of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN const char* chi_sv_get(chi_string_view sv);
 
+/**
+ * @brief Gets the character at a specified index in the chi_string_view.
+ *
+ * This function returns the character at the specified index in the chi_string_view.
+ *
+ * @param sv The chi_string_view to get the character from.
+ * @param idx Index of the character to get.
+ * @return The character at the specified index.
+ */
 CHI_API CHI_CHECK_RETURN char chi_sv_at(chi_string_view sv, size_t idx);
+
+/**
+ * @brief Gets the beginning pointer of the chi_string_view.
+ *
+ * This function returns the beginning pointer of the chi_string_view.
+ *
+ * @param sv The chi_string_view to get the beginning pointer from.
+ * @return The beginning pointer of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN const char* chi_sv_begin(chi_string_view sv);
+
+/**
+ * @brief Gets the end pointer of the chi_string_view.
+ *
+ * This function returns the end pointer of the chi_string_view.
+ *
+ * @param sv The chi_string_view to get the end pointer from.
+ * @return The end pointer of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN const char* chi_sv_end(chi_string_view sv);
 
+/**
+ * @brief Gets the size of the chi_string_view.
+ *
+ * This function returns the size of the chi_string_view.
+ *
+ * @param sv The chi_string_view to get the size of.
+ * @return The size of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_size(chi_string_view sv);
+
+/**
+ * @brief Gets the length of the chi_string_view.
+ *
+ * This function returns the length of the chi_string_view.
+ *
+ * @param sv The chi_string_view to get the length of.
+ * @return The length of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_length(chi_string_view sv);
 
+/**
+ * @brief Returns the first character of the chi_string_view.
+ *
+ * This function returns the first character of the chi_string_view. If the string view is empty,
+ * it asserts with an error message.
+ *
+ * @param sv The chi_string_view to get the first character from.
+ * @return The first character of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN char chi_sv_front(chi_string_view sv);
+
+/**
+ * @brief Returns the last character of the chi_string_view.
+ *
+ * This function returns the last character of the chi_string_view. If the string view is empty,
+ * it asserts with an error message.
+ *
+ * @param sv The chi_string_view to get the last character from.
+ * @return The last character of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN char chi_sv_back(chi_string_view sv);
 
+/**
+ * @brief Checks if two chi_string_view are equal.
+ *
+ * This function compares two chi_string_view and returns true if they are equal.
+ *
+ * @param lhs The first chi_string_view.
+ * @param rhs The second chi_string_view.
+ * @return true if the two chi_string_view are equal, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_equal(chi_string_view lhs, chi_string_view rhs);
+
+/**
+ * @brief Checks if a chi_string_view is equal to a null-terminated C string.
+ *
+ * This function compares a chi_string_view and a null-terminated C string and returns true if they are equal.
+ *
+ * @param lhs The chi_string_view.
+ * @param rhs The null-terminated C string.
+ * @return true if the chi_string_view and the C string are equal, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_equal_s(chi_string_view lhs, const char* rhs);
+
+/**
+ * @brief Checks if a chi_string_view is equal to a chi_string.
+ *
+ * This function compares a chi_string_view and a chi_string and returns true if they are equal.
+ *
+ * @param lhs The chi_string_view.
+ * @param rhs The chi_string.
+ * @return true if the chi_string_view and the chi_string are equal, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_equal_cs(chi_string_view lhs, chi_string* rhs);
+
+/**
+ * @brief Checks if two chi_string_view are equal, ignoring case.
+ *
+ * This function compares two chi_string_view, ignoring case, and returns true if they are equal.
+ *
+ * @param lhs The first chi_string_view.
+ * @param rhs The second chi_string_view.
+ * @return true if the two chi_string_view are equal, ignoring case, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_equal_ignorecase(chi_string_view lhs, chi_string_view rhs);
+
+/**
+ * @brief Checks if a chi_string_view is equal to a null-terminated C string, ignoring case.
+ *
+ * This function compares a chi_string_view and a null-terminated C string, ignoring case, and returns true if they are equal.
+ *
+ * @param lhs The chi_string_view.
+ * @param rhs The null-terminated C string.
+ * @return true if the chi_string_view and the C string are equal, ignoring case, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_equal_ignorecase_s(chi_string_view lhs, const char* rhs);
+
+/**
+ * @brief Checks if a chi_string_view is equal to a chi_string, ignoring case.
+ *
+ * This function compares a chi_string_view and a chi_string, ignoring case, and returns true if they are equal.
+ *
+ * @param lhs The chi_string_view.
+ * @param rhs The chi_string.
+ * @return true if the chi_string_view and the chi_string are equal, ignoring case, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_equal_ignorecase_cs(chi_string_view lhs, chi_string* rhs);
 
+/**
+ * @brief Checks if the chi_string_view starts with a given character.
+ *
+ * This function checks if the chi_string_view starts with the specified character.
+ *
+ * @param sv The chi_string_view.
+ * @param ch The character to check.
+ * @return true if the chi_string_view starts with the character, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_starts_with(chi_string_view sv, char ch);
+
+/**
+ * @brief Checks if the chi_string_view ends with a given character.
+ *
+ * This function checks if the chi_string_view ends with the specified character.
+ *
+ * @param sv The chi_string_view.
+ * @param ch The character to check.
+ * @return true if the chi_string_view ends with the character, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_ends_with(chi_string_view sv, char ch);
+
+/**
+ * @brief Checks if the chi_string_view is empty.
+ *
+ * This function checks if the chi_string_view is empty.
+ *
+ * @param sv The chi_string_view.
+ * @return true if the chi_string_view is empty, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_is_empty(chi_string_view sv);
 
+/**
+ * @brief Creates a substring chi_string_view from the given chi_string_view.
+ *
+ * This function creates a chi_string_view that represents a substring of the given chi_string_view.
+ *
+ * @param sv The original chi_string_view.
+ * @param offset The starting position of the substring.
+ * @param length The length of the substring.
+ * @return A chi_string_view representing the substring.
+ */
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_substring(const chi_string_view sv, size_t offset, size_t length);
 
+/**
+ * @brief Finds the first occurrence of a character in the chi_string_view from a given offset.
+ *
+ * This function finds the first occurrence of the specified character in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The character to find.
+ * @return The position of the first occurrence of the character, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_c(chi_string_view sv, size_t offset, char delim);
+
+/**
+ * @brief Finds the first occurrence of a null-terminated C string in the chi_string_view from a given offset.
+ *
+ * This function finds the first occurrence of the specified null-terminated C string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The null-terminated C string to find.
+ * @return The position of the first occurrence of the C string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find(chi_string_view sv, size_t offset, const char* delim);
+
+/**
+ * @brief Finds the first occurrence of a chi_string in the chi_string_view from a given offset.
+ *
+ * This function finds the first occurrence of the specified chi_string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The chi_string to find.
+ * @return The position of the first occurrence of the chi_string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_cs(chi_string_view sv, size_t offset, const chi_string* delim);
+
+/**
+ * @brief Finds the first occurrence of a chi_string_view in the chi_string_view from a given offset.
+ *
+ * This function finds the first occurrence of the specified chi_string_view in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The chi_string_view to find.
+ * @return The position of the first occurrence of the chi_string_view, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_sv(chi_string_view sv, size_t offset, chi_string_view delim);
+
+/**
+ * @brief Finds the last occurrence of a character in the chi_string_view from a given offset.
+ *
+ * This function finds the last occurrence of the specified character in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The character to find.
+ * @return The position of the last occurrence of the character, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_rfind_c(chi_string_view sv, size_t offset, char delim);
+
+/**
+ * @brief Finds the last occurrence of a null-terminated C string in the chi_string_view from a given offset.
+ *
+ * This function finds the last occurrence of the specified null-terminated C string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The null-terminated C string to find.
+ * @return The position of the last occurrence of the C string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_rfind(chi_string_view sv, size_t offset, const char* delim);
+
+/**
+ * @brief Finds the last occurrence of a chi_string in the chi_string_view from a given offset.
+ *
+ * This function finds the last occurrence of the specified chi_string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The chi_string to find.
+ * @return The position of the last occurrence of the chi_string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_rfind_cs(chi_string_view sv, size_t offset, const chi_string* delim);
+
+/**
+ * @brief Finds the last occurrence of a chi_string_view in the chi_string_view from a given offset.
+ *
+ * This function finds the last occurrence of the specified chi_string_view in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delim The chi_string_view to find.
+ * @return The position of the last occurrence of the chi_string_view, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_rfind_sv(chi_string_view sv, size_t offset, chi_string_view delim);
+
+/**
+ * @brief Finds the first occurrence of any character in a null-terminated C string in the chi_string_view from a given offset.
+ *
+ * This function finds the first occurrence of any character in the specified null-terminated C string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delims The null-terminated C string containing the characters to find.
+ * @return The position of the first occurrence of any character in the C string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_first_of(chi_string_view sv, size_t offset, const char* delims);
+
+/**
+ * @brief Finds the last occurrence of any character in a null-terminated C string in the chi_string_view from a given offset.
+ *
+ * This function finds the last occurrence of any character in the specified null-terminated C string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delims The null-terminated C string containing the characters to find.
+ * @return The position of the last occurrence of any character in the C string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_last_of(chi_string_view sv, size_t offset, const char* delims);
+
+/**
+ * @brief Finds the first occurrence of any character not in a null-terminated C string in the chi_string_view from a given offset.
+ *
+ * This function finds the first occurrence of any character not in the specified null-terminated C string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delims The null-terminated C string containing the characters to not find.
+ * @return The position of the first occurrence of any character not in the C string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_first_not_of(chi_string_view sv, size_t offset, const char* delims);
+
+/**
+ * @brief Finds the last occurrence of any character not in a null-terminated C string in the chi_string_view from a given offset.
+ *
+ * This function finds the last occurrence of any character not in the specified null-terminated C string in the chi_string_view starting from the given offset.
+ *
+ * @param sv The chi_string_view.
+ * @param offset The starting position for the search.
+ * @param delims The null-terminated C string containing the characters to not find.
+ * @return The position of the last occurrence of any character not in the C string, or chi_npos if not found.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_last_not_of(chi_string_view sv, size_t offset, const char* delims);
+
+/**
+ * @brief Checks if the chi_string_view contains a given character.
+ *
+ * This function checks if the chi_string_view contains the specified character.
+ *
+ * @param sv The chi_string_view.
+ * @param delim The character to check.
+ * @return true if the chi_string_view contains the character, false otherwise.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_contains(chi_string_view sv, char delim);
+
+/**
+ * @brief Converts the chi_string_view to an integer.
+ *
+ * This function converts the chi_string_view to an integer using the atoi function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The integer representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN int chi_sv_toi(chi_string_view sv);
+
+/**
+ * @brief Converts the chi_string_view to a float.
+ *
+ * This function converts the chi_string_view to a float using the strtof function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The float representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN float chi_sv_tof(chi_string_view sv);
+
+/**
+ * @brief Converts the chi_string_view to a double.
+ *
+ * This function converts the chi_string_view to a double using the strtod function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The double representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN double chi_sv_tod(chi_string_view sv);
+
+/**
+ * @brief Converts the chi_string_view to a long.
+ *
+ * This function converts the chi_string_view to a long using the strtol function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The long representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN long chi_sv_tol(chi_string_view sv);
+
+/**
+ * @brief Converts the chi_string_view to a long long.
+ *
+ * This function converts the chi_string_view to a long long using the strtoll function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The long long representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN long long chi_sv_toll(chi_string_view sv);
+
+/**
+ * @brief Converts the chi_string_view to an unsigned long.
+ *
+ * This function converts the chi_string_view to an unsigned long using the strtoul function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The unsigned long representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN unsigned long chi_sv_toul(chi_string_view sv);
+
+/**
+ * @brief Converts the chi_string_view to an unsigned long long.
+ *
+ * This function converts the chi_string_view to an unsigned long long using the strtoull function.
+ *
+ * @param sv The chi_string_view to convert.
+ * @return The unsigned long long representation of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN unsigned long long chi_sv_toull(chi_string_view sv);
+
+/**
+ * @brief Computes the hash of the chi_string_view.
+ *
+ * This function computes the hash of the chi_string_view.
+ *
+ * @param sv The chi_string_view to hash.
+ * @return The hash of the chi_string_view.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_hash(chi_string_view sv);
 
 /* CHI STRING VIEW END */
