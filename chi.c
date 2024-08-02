@@ -1405,15 +1405,15 @@ CHI_API chi_string* chi_reverse(chi_string* chi_str)
     return chi_reverse_ip(chi_str, 0, chi_str->size);
 }
 
-CHI_API char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end)
+CHI_API CHI_CHECK_RETURN char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end)
 {
     chi_str_assert(chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
     check_rand_seed();
-    return chi_str->data[_chi_random_in_range(begin, end)];
+    return chi_str->data[_chi_random_in_range((uint32_t)begin, (uint32_t)end)];
 }
 
-CHI_API char chi_sample(const chi_string* chi_str)
+CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str)
 {
     chi_str_assert(chi_str);
     return chi_sample_ip(chi_str, 0, chi_str->size);

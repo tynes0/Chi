@@ -1347,7 +1347,7 @@ CHI_API chi_string* chi_reverse(chi_string* chi_str);
  * @param end The ending position of the range (exclusive).
  * @return A randomly selected character from the specified range within the chi_string.
  */
-CHI_API char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end);
+CHI_API CHI_CHECK_RETURN char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end);
 
 /**
  * @brief Returns a random character from the chi_string.
@@ -1358,7 +1358,7 @@ CHI_API char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end);
  * @param chi_str The chi_string to sample a character from.
  * @return A randomly selected character from the chi_string.
  */
-CHI_API char chi_sample(const chi_string* chi_str);
+CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str);
 
 
 /* CHI STRING END */
