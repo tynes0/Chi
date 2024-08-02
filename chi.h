@@ -1173,6 +1173,55 @@ CHI_API chi_string* chi_for_each_ip(chi_string* chi_str, size_t begin, size_t en
 CHI_API chi_string* chi_for_each(chi_string* chi_str, void(*pred)(char*));
 
 /**
+ * @brief Converts a range of characters in the chi_string to uppercase.
+ *
+ * This function iterates over the characters in the chi_string from the specified begin index to the end index
+ * and converts each lowercase character to uppercase by adjusting their ASCII values.
+ *
+ * @param chi_str Pointer to the chi_string to be processed.
+ * @param begin Start index for processing.
+ * @param end End index for processing.
+ * @return Pointer to the modified chi_string with the specified range of characters converted to uppercase.
+ */
+CHI_API chi_string* chi_to_upper_ip(chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Converts all characters in the chi_string to uppercase.
+ *
+ * This function iterates over all characters in the chi_string and converts each lowercase character to uppercase
+ * by adjusting their ASCII values.
+ *
+ * @param chi_str Pointer to the chi_string to be processed.
+ * @return Pointer to the modified chi_string with all characters converted to uppercase.
+ */
+CHI_API chi_string* chi_to_upper(chi_string* chi_str);
+
+/**
+ * @brief Converts a range of characters in the chi_string to lowercase.
+ *
+ * This function iterates over the characters in the chi_string from the specified begin index to the end index
+ * and converts each uppercase character to lowercase by adjusting their ASCII values.
+ *
+ * @param chi_str Pointer to the chi_string to be processed.
+ * @param begin Start index for processing.
+ * @param end End index for processing.
+ * @return Pointer to the modified chi_string with the specified range of characters converted to lowercase.
+ */
+CHI_API chi_string* chi_to_lower_ip(chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Converts all characters in the chi_string to lowercase.
+ *
+ * This function iterates over all characters in the chi_string and converts each uppercase character to lowercase
+ * by adjusting their ASCII values.
+ *
+ * @param chi_str Pointer to the chi_string to be processed.
+ * @return Pointer to the modified chi_string with all characters converted to lowercase.
+ */
+CHI_API chi_string* chi_to_lower(chi_string* chi_str);
+
+
+/**
  * @brief Counts the occurrences of a character in the chi_string from begin to end.
  *
  * This function counts how many times the specified character appears in the chi_string from the begin index to the end index.
