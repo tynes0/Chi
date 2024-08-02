@@ -10,7 +10,7 @@
 #define CHECK_NULL(ptr, retval) do { if(ptr == NULL) { return retval; } } while(0)
 #define CHECK_N(ptr, n) do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0)
 
-#define MAX_BUFFER_LEN 1024
+#define MAX_BUFFER_LEN 8192
 
 extern bool s_check_n;
 
@@ -73,26 +73,7 @@ chi_errno_t chi_read_n(chi_string* chi_str, FILE* file, int n)
 
 chi_errno_t chi_read(chi_string* chi_str, FILE* file)
 {
-    CHECK_NULL(chi_str, CHI_ERR_NULL_CHI_STR);
-    CHECK_NULL(file, CHI_ERR_NULL_FILE);
-    char buffer[MAX_BUFFER_LEN] = { 0 };
-    if (fgets(buffer, MAX_BUFFER_LEN, file) != NULL)
-    {
-        size_t length = 0;
-        while (buffer[length] != '\0' && buffer[length] != '\n' && length < MAX_BUFFER_LEN)
-            length++;
-        if (length > chi_str->capacity)
-        {
-            chi_errno_t err;
-            if ((err = chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, length))) != CHI_ERR_NO_ERR)
-                return err;
-        }
-        chi_str->size = length;
-        copy_to_chi(chi_str, buffer);
-        chi_str->data[length] = 0;
-        return CHI_ERR_NO_ERR;
-    }
-    return CHI_ERR_FILE_READ;
+    return chi_read_n(chi_str, file, MAX_BUFFER_LEN);
 }
 
 chi_errno_t chi_read_from_filepath(chi_string* chi_str, const char* filepath)
@@ -132,27 +113,7 @@ chi_errno_t chi_read_to_end_n(chi_string* chi_str, FILE* file, int n)
 
 chi_errno_t chi_read_to_end(chi_string* chi_str, FILE* file)
 {
-    CHECK_NULL(chi_str, CHI_ERR_NULL_CHI_STR);
-    CHECK_NULL(file, CHI_ERR_NULL_FILE);
-    char buffer[MAX_BUFFER_LEN] = { 0 };
-    if (fgets(buffer, MAX_BUFFER_LEN, file) != NULL)
-    {
-        size_t length = 0;
-        while (buffer[length] != '\0' && buffer[length] != '\n' && length < MAX_BUFFER_LEN)
-            length++;
-        if (length + chi_str->size > chi_str->capacity)
-        {
-            chi_errno_t err;
-            if ((err = chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, length + chi_str->size))) != CHI_ERR_NO_ERR)
-                return err;
-        }
-
-        memcpy(chi_str->data + chi_str->size, buffer, length);
-        chi_str->size += length;
-        chi_str->data[chi_str->size + length] = 0;
-        return CHI_ERR_NO_ERR;
-    }
-    return CHI_ERR_FILE_READ;
+    return chi_read_to_end_n(chi_str, file, MAX_BUFFER_LEN);
 }
 
 chi_errno_t chi_write(const chi_string* chi_str, FILE* file)
