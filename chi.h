@@ -1146,7 +1146,7 @@ CHI_API void chi_swap(chi_string* lhs, chi_string* rhs);
  * @param chi_str The `chi_string` instance to hash.
  * @return Returns the hash value of the `chi_string`.
  */
-CHI_API CHI_CHECK_RETURN size_t chi_hash(chi_string* chi_str);
+CHI_API CHI_CHECK_RETURN size_t chi_hash(const chi_string* chi_str);
 
 /**
  * @brief Applies a given function to each character in the chi_string from begin to end.
@@ -1335,6 +1335,30 @@ CHI_API chi_string* chi_reverse_ip(chi_string* chi_str, size_t begin, size_t end
  * @return Pointer to the reversed chi_string.
  */
 CHI_API chi_string* chi_reverse(chi_string* chi_str);
+
+/**
+ * @brief Returns a random character from a specified range within the chi_string.
+ *
+ * This function returns a randomly selected character from the given chi_string
+ * within the specified range [begin, end).
+ *
+ * @param chi_str The chi_string to sample a character from.
+ * @param begin The starting position of the range.
+ * @param end The ending position of the range (exclusive).
+ * @return A randomly selected character from the specified range within the chi_string.
+ */
+CHI_API char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Returns a random character from the chi_string.
+ *
+ * This function returns a randomly selected character from the given chi_string.
+ * If the string is empty, it asserts with an error message.
+ *
+ * @param chi_str The chi_string to sample a character from.
+ * @return A randomly selected character from the chi_string.
+ */
+CHI_API char chi_sample(const chi_string* chi_str);
 
 
 /* CHI STRING END */

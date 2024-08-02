@@ -21,11 +21,12 @@
 #define pop_chi(chi)                                    do { _remove_string_from_list(&s_string_list_all_chis, chi); _remove_string_from_list(_top_list(), chi); } while(0)
 #define _swap_(type, left, right)                       do { type temp = left; left = right; right = temp; } while(0)
 #define _swap_ptr_(type, left, right)                   do { type temp = *left; *left = *right; *right = temp; } while(0)
+#define check_rand_seed()                               do { if (!s_rand_initialized) { _chi_rand_seed = (uint32_t)time(NULL); s_rand_initialized = true; } } while(0)
 
 #define CHECK_NULL(ptr)                                 do { if(ptr == NULL) { return NULL; } } while(0)
 #define CHECK_NULL2(ptr, retval)                        do { if(ptr == NULL) { return retval; } } while(0)
 #define CHECK_N(ptr, n)                                 do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0) // n should't be const!! 
-#define CHECK_BEGIN_AND_END(size, begin, end, retval)   do { if(begin > size) { return retval; } if(size < end) { end = size; } } while(0) // end shouldn't be const
+#define CHECK_BEGIN_AND_END(size, begin, end)           do { chi_assert(begin < end && begin < size, "range is not verified!"); if(size < end) { end = size; } } while(0) // end shouldn't be const
 
 #define to_chi_str_impl(buffer_size, format, value)     do { chi_string* result = chi_create_empty(buffer_size); snprintf(result->data, result->size, format, value); return result; } while(0)
 #define chi_to_impl1(chi_str, func)                     do { chi_str_assert(chi_str); data_assert(chi_str->data); return func(chi_str->data); } while(0)
@@ -48,6 +49,7 @@ static const size_t prime = 16777619u;
 #endif // defined(_WIN64)
 /* hash constants */
 
+extern bool s_rand_initialized = false;
 extern bool s_check_n = false;
 
 struct _chi_string
@@ -448,6 +450,19 @@ static size_t _append_bytes(size_t val, const unsigned char* const first, const 
     return val;
 }
 
+static uint32_t _chi_rand_seed = 0;
+
+static uint32_t _chi_random()
+{
+    _chi_rand_seed = (1664525 * _chi_rand_seed + 1013904223) & 0xFFFFFFFF;
+    return _chi_rand_seed;
+}
+
+static uint32_t _chi_random_in_range(uint32_t min, uint32_t max)
+{
+    return (_chi_random() % (max - min)) + min;
+}
+
 /* UTILS END */
 
 #ifdef _CHI_DEBUG
@@ -596,7 +611,7 @@ chi_errno_t chi_begin_scope() // todo assert
 // TODO decrease cap
 chi_errno_t chi_end_scope()
 {
-    chi_assert(s_string_list_array.count > 0, "chi_end_scope() called without chi_begin_scope()!");
+    chi_assert(s_string_list_array.count > 0, "chi_end_scope() called on empty stack!");
     s_string_list_array.count--;
     for (size_t i = 0; i < s_string_list_array.lists[s_string_list_array.count].count; ++i)
         chi_free(s_string_list_array.lists[s_string_list_array.count].data[i]);
@@ -1232,7 +1247,7 @@ CHI_API void chi_swap(chi_string* lhs, chi_string* rhs)
     *rhs = temp;
 }
 
-CHI_API CHI_CHECK_RETURN size_t chi_hash(chi_string* chi_str)
+CHI_API CHI_CHECK_RETURN size_t chi_hash(const chi_string* chi_str)
 {
     chi_str_assert(chi_str);
     CHECK_NULL2(chi_str->data, 0);
@@ -1243,7 +1258,7 @@ CHI_API chi_string* chi_for_each_ip(chi_string* chi_str, size_t begin, size_t en
 {
     CHECK_NULL(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
     for (size_t i = begin; i < end; ++i)
         pred(&chi_str->data[i]);
@@ -1261,7 +1276,7 @@ CHI_API CHI_CHECK_RETURN size_t chi_count_ip(const chi_string* chi_str, char ch,
 {
     chi_str_assert(chi_str);
     data_assert(chi_str->data);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, 0);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
     size_t counter = 0;
 
@@ -1281,7 +1296,7 @@ CHI_API CHI_CHECK_RETURN size_t chi_count_if_ip(const chi_string* chi_str, size_
 {
     chi_str_assert(chi_str);
     data_assert(chi_str->data);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, 0);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
     
     size_t counter = 0;
 
@@ -1301,7 +1316,7 @@ CHI_API CHI_CHECK_RETURN bool chi_all_of_ip(const chi_string* chi_str, size_t be
 {
     chi_str_assert(chi_str);
     data_assert(chi_str->data);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
     for (size_t i = begin; i < end; ++i)
         if (!pred(chi_str->data[i]))
@@ -1319,7 +1334,7 @@ CHI_API CHI_CHECK_RETURN bool chi_any_of_ip(const chi_string* chi_str, size_t be
 {
     chi_str_assert(chi_str);
     data_assert(chi_str->data);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
     for (size_t i = begin; i < end; ++i)
         if (pred(chi_str->data[i]))
@@ -1337,7 +1352,7 @@ CHI_API CHI_CHECK_RETURN bool chi_none_of_ip(const chi_string* chi_str, size_t b
 {
     chi_str_assert(chi_str);
     data_assert(chi_str->data);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
     for (size_t i = begin; i < end; ++i)
         if (pred(chi_str->data[i]))
@@ -1355,13 +1370,12 @@ CHI_API chi_string* chi_shuffle_ip(chi_string* chi_str, size_t begin, size_t end
 {
     chi_str_assert(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
-    CHECK_BEGIN_AND_END(chi_str->size, end, begin, chi_str);
-
-    srand((unsigned int)time(NULL));
+    CHECK_BEGIN_AND_END(chi_str->size, end, begin);
+    check_rand_seed();
 
     for (size_t i = begin; i < end; ++i)
     {
-        size_t j = begin + (rand() % (end - begin + 1));
+        size_t j = _chi_random_in_range((uint32_t)begin, (uint32_t)end);
         _swap_ptr_(char, &chi_str->data[i], &chi_str->data[j]);
     }
     return chi_str;
@@ -1377,7 +1391,7 @@ CHI_API chi_string* chi_reverse_ip(chi_string* chi_str, size_t begin, size_t end
 {
     chi_str_assert(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
     
     for (size_t i = 0; i < (end - begin) / 2; ++i)
         _swap_(char, chi_str->data[begin + i], chi_str->data[end - i - 1]);
@@ -1389,6 +1403,20 @@ CHI_API chi_string* chi_reverse(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
     return chi_reverse_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API char chi_sample_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    check_rand_seed();
+    return chi_str->data[_chi_random_in_range(begin, end)];
+}
+
+CHI_API char chi_sample(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_sample_ip(chi_str, 0, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data)
