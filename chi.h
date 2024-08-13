@@ -60,28 +60,6 @@
 
 _CHI_HEADER_BEGIN
 
-/* error handles begin */
-
-typedef uint32_t chi_errno_t;
-#define CHI_ERRNO_C UINT32_C
-
-    // ERROR CODES
-#define CHI_ERR_NO_ERR				    CHI_ERRNO_C(1 << 0)
-#define CHI_ERR_INITIALIZE_FAILED	    CHI_ERRNO_C(1 << 1)
-#define CHI_ERR_NULL_CHI_STR		    CHI_ERRNO_C(1 << 2)
-#define CHI_ERR_NULL_DATA			    CHI_ERRNO_C(1 << 3)
-#define CHI_ERR_NULL_FILE			    CHI_ERRNO_C(1 << 4)
-#define CHI_ERR_NULL_PARAMETER			CHI_ERRNO_C(1 << 5)
-#define CHI_ERR_ALLOCATION			    CHI_ERRNO_C(1 << 6)
-#define CHI_ERR_ALREADY_RESERVED	    CHI_ERRNO_C(1 << 7)
-//#define CHI_ERR_						CHI_ERRNO_C(1 << 8)
-#define CHI_ERR_FILE_WRITE              CHI_ERRNO_C(1 << 9)
-#define CHI_ERR_FILE_READ               CHI_ERRNO_C(1 << 10)
-#define CHI_ERR_STD_ERR	                CHI_ERRNO_C(1 << 11)
-#define CHI_ERR_IMPL_ERR	            CHI_ERRNO_C(1 << 31) // only development -> I hope you don't get this error...
-
-/* error handles end */
-
 #ifdef _CHI_DEBUG
 /**
  * @brief Shows an assertion message and terminates the program.
