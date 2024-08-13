@@ -356,17 +356,13 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size
 
 /**
  * @brief Begins a scope for chi_string operations.
- * 
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_begin_scope();
+CHI_API void chi_begin_scope();
 
 /**
  * @brief Ends a scope for chi_string operations.
- * 
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_end_scope();
+CHI_API void chi_end_scope();
 
 /**
  * @brief Cleans up resources used by the chi_string library.
@@ -377,23 +373,20 @@ CHI_API void chi_cleanup();
  * @brief Frees a chi_string instance.
  * 
  * @param chi_str The chi_string to free.
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_free(chi_string* chi_str);
+CHI_API void chi_free(chi_string* chi_str);
 
 /**
  * @brief Clears the contents of a chi_string instance.
  * 
  * @param chi_str The chi_string to clear.
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_clear(chi_string* chi_str);
+CHI_API void chi_clear(chi_string* chi_str);
 
 /**
  * @brief Releases the internal character array of a chi_string.
  * 
  * @param chi_str The chi_string to release.
- * @return A pointer to the released character array.
  */
 CHI_API char* chi_release(chi_string* chi_str);
 
@@ -402,26 +395,23 @@ CHI_API char* chi_release(chi_string* chi_str);
  * 
  * @param chi_str The chi_string to resize.
  * @param new_size The new size of the chi_string.
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_resize(chi_string* chi_str, size_t new_size);
+CHI_API void chi_resize(chi_string* chi_str, size_t new_size);
 
 /**
  * @brief Reserves capacity for a chi_string instance.
  * 
  * @param chi_str The chi_string to reserve capacity for.
  * @param new_cap The new capacity of the chi_string.
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_reserve(chi_string* chi_str, size_t new_cap);
+CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap);
 
 /**
  * @brief Shrinks the capacity of a chi_string instance to fit its size.
  * 
  * @param chi_str The chi_string to shrink.
- * @return An error code indicating success or failure.
  */
-CHI_API chi_errno_t chi_shrink_to_fit(chi_string* chi_str);
+CHI_API void chi_shrink_to_fit(chi_string* chi_str);
 
 /**
  * @brief Resets a chi_string instance with new data.

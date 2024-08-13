@@ -53,11 +53,7 @@ chi_errno_t chi_read_n(chi_string* chi_str, FILE* file, int n)
     CHECK_NULL(file, CHI_ERR_NULL_FILE);
     CHECK_NULL(chi_str, CHI_ERR_NULL_CHI_STR);
     if (n > chi_str->capacity)
-    {
-        chi_errno_t err;
-        if ((err = chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, n))) != CHI_ERR_NO_ERR)
-            return err;
-    }
+        chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, n));
     if (fgets(chi_str->data, n, file) != NULL)
     {
         size_t length = 0;
@@ -93,11 +89,7 @@ chi_errno_t chi_read_to_end_n(chi_string* chi_str, FILE* file, int n)
     CHECK_NULL(file, CHI_ERR_NULL_FILE);
     CHECK_NULL(chi_str, CHI_ERR_NULL_CHI_STR);
     if (n + chi_str->size > chi_str->capacity)
-    {
-        chi_errno_t err;
-        if ((err = chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, n + chi_str->size))) != CHI_ERR_NO_ERR)
-            return err;
-    }
+        chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, n + chi_str->size));
     if (fgets(chi_str->data + chi_str->size, n, file) != NULL)
     {
         size_t length = chi_str->size;

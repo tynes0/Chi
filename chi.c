@@ -22,6 +22,7 @@
 #define _swap_(type, left, right)                       do { type temp = left; left = right; right = temp; } while(0)
 #define _swap_ptr_(type, left, right)                   do { type temp = *left; *left = *right; *right = temp; } while(0)
 #define check_rand_seed()                               do { if (!s_rand_initialized) { _chi_rand_seed = (uint32_t)time(NULL); s_rand_initialized = true; } } while(0)
+#define secure_underflow(uval)                          do { if(uval == 0) { break; } } while(0)
 
 #define CHECK_NULL(ptr)                                 do { if(ptr == NULL) { return NULL; } } while(0)
 #define CHECK_NULL2(ptr, retval)                        do { if(ptr == NULL) { return retval; } } while(0)
@@ -298,8 +299,7 @@ static size_t _chi_find_pattern(const char* data, size_t len, size_t offset, con
         {
             if (memcmp(data + i, pattern, pattern_len) == 0)
                 return i;
-            if (i == 0)
-                break; // prevent size_t underflow
+            secure_underflow(i);
         }
     }
     else
@@ -341,6 +341,7 @@ static size_t _chi_find_first_last_of_not_of(const char* data, size_t len, size_
             }
             if (found)
                 return i - 1;
+            secure_underflow(i);
         }
     }
     else
@@ -386,15 +387,16 @@ static bool _chi_equal_data_ignorecase(const char* lhs, const char* rhs, size_t 
     return true;
 }
 
-static chi_errno_t _add_string_to_list(chi_string_list* string_list, chi_string* chi_str)
+static void _add_string_to_list(chi_string_list* string_list, chi_string* chi_str)
 {
+#pragma warning(push)
+#pragma warning(disable : 6011) // asserted!
     if (string_list == NULL)
-        return CHI_ERR_NULL_DATA;
+        return;
     if(string_list->data == NULL)
     {
         string_list->data = (chi_string**)malloc(sizeof(chi_string*) * minimum_list_capacity);
-        if (string_list->data == NULL)
-            return CHI_ERR_INITIALIZE_FAILED; // todo assert
+        chi_assert(string_list, "Chi initialize failed!");
         string_list->count = 0;
         string_list->capacity = minimum_list_capacity;
     }
@@ -402,24 +404,24 @@ static chi_errno_t _add_string_to_list(chi_string_list* string_list, chi_string*
     {
         size_t new_cap = _chi_calculate_capacity(string_list->capacity, string_list->capacity + 1);
         chi_string** temp = (chi_string**)malloc(sizeof(chi_string*) * new_cap);
-        if (temp == NULL)
-            return CHI_ERR_ALLOCATION; // todo assert
+        chi_assert(temp, "Allocation error!");
         memcpy(temp, string_list->data, sizeof(chi_string**) * string_list->count);
         free(string_list->data);
         string_list->data = temp;
         string_list->capacity = new_cap;
     }
     string_list->data[string_list->count++] = chi_str;
-    return CHI_ERR_NO_ERR;
+#pragma warning(pop)
 }
 
 // todo decrease capacity
-static chi_errno_t _remove_string_from_list(chi_string_list* string_list, const chi_string* chi_str)
+static void _remove_string_from_list(chi_string_list* string_list, const chi_string* chi_str)
 {
     if (string_list == NULL)
-        return CHI_ERR_NULL_DATA;
+        return;
     if (string_list->data == NULL)
-        return CHI_ERR_IMPL_ERR;
+        return;
+    chi_assert(string_list->data, "Unexpexted NULL data! Implamentation error!");
     for (size_t i = 0; i < string_list->count; ++i)
     {
         if (string_list->data[i] == chi_str)
@@ -432,7 +434,6 @@ static chi_errno_t _remove_string_from_list(chi_string_list* string_list, const 
             string_list->count--;
         } 
     }
-    return CHI_ERR_NO_ERR;
 }
 
 static chi_string_list* _top_list()
@@ -580,13 +581,12 @@ CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capac
     return result;
 }
 
-chi_errno_t chi_begin_scope() // todo assert
+void chi_begin_scope()
 {
     if (s_string_list_array.lists == NULL)
     {
         s_string_list_array.lists = (chi_string_list*)malloc(sizeof(chi_string_list) * minimum_list_array_capacity);
-        if (s_string_list_array.lists == NULL)
-            return CHI_ERR_INITIALIZE_FAILED;
+        chi_assert(s_string_list_array.lists, "Chi initialize failed!");
         s_string_list_array.count = 0;
         s_string_list_array.capacity = minimum_list_array_capacity;
     }
@@ -594,8 +594,7 @@ chi_errno_t chi_begin_scope() // todo assert
     {
         size_t new_cap = _chi_calculate_capacity(s_string_list_array.capacity, s_string_list_array.capacity + 1);
         chi_string_list* temp = (chi_string_list*)malloc(sizeof(chi_string_list) * new_cap);
-        if (temp == NULL)
-            return CHI_ERR_ALLOCATION;
+        chi_assert(temp, "Allocation error!");
         memcpy(temp, s_string_list_array.lists, sizeof(chi_string_list*) * s_string_list_array.count);
         free(s_string_list_array.lists);
         s_string_list_array.lists = temp;
@@ -605,18 +604,16 @@ chi_errno_t chi_begin_scope() // todo assert
     s_string_list_array.lists[s_string_list_array.count].count = 0;
     s_string_list_array.lists[s_string_list_array.count].data = NULL;
     s_string_list_array.count++;
-    return CHI_ERR_NO_ERR;
 }
 
 // TODO decrease cap
-chi_errno_t chi_end_scope()
+void chi_end_scope()
 {
     chi_assert(s_string_list_array.count > 0, "chi_end_scope() called on empty stack!");
     s_string_list_array.count--;
     for (size_t i = 0; i < s_string_list_array.lists[s_string_list_array.count].count; ++i)
         chi_free(s_string_list_array.lists[s_string_list_array.count].data[i]);
     s_string_list_array.lists[s_string_list_array.count].count = 0;
-    return CHI_ERR_NO_ERR;
 }
 
 CHI_API void chi_cleanup()
@@ -628,10 +625,9 @@ CHI_API void chi_cleanup()
     s_string_list_array.count = 0;
 }
 
-CHI_API chi_errno_t chi_free(chi_string* chi_str)
+CHI_API void chi_free(chi_string* chi_str)
 {
-    if (chi_str == NULL)
-        return CHI_ERR_NULL_CHI_STR;
+    chi_str_assert(chi_str);
     pop_chi(chi_str);
     if (chi_str->data != NULL)
     {
@@ -640,18 +636,15 @@ CHI_API chi_errno_t chi_free(chi_string* chi_str)
     }
     free(chi_str);
     chi_str = NULL;
-    return CHI_ERR_NO_ERR;
 }
 
-CHI_API chi_errno_t chi_clear(chi_string* chi_str)
+CHI_API void chi_clear(chi_string* chi_str)
 {
-    if (chi_str == NULL)
-        return CHI_ERR_NULL_CHI_STR;
+    chi_str_assert(chi_str);
     if (chi_str->data == NULL)
-        return CHI_ERR_NULL_DATA;
+        return;
     zero_memory(chi_str->data, chi_str->size);
     chi_str->size = 0;
-    return CHI_ERR_NO_ERR;
 }
 
 char* chi_release(chi_string* chi_str)
@@ -663,78 +656,62 @@ char* chi_release(chi_string* chi_str)
     return data;
 }
 
-CHI_API chi_errno_t chi_resize(chi_string* chi_str, size_t new_size)
+CHI_API void chi_resize(chi_string* chi_str, size_t new_size)
 {
-    if (chi_str == NULL)
-        return CHI_ERR_NULL_CHI_STR;
-
+    chi_str_assert(chi_str);
     if (new_size == 0)
-        return chi_clear(chi_str);
-    
-    if (chi_str->data == NULL)
-        return CHI_ERR_NULL_DATA;
-
+    {
+        chi_clear(chi_str);
+        return;
+    }
+    data_assert(chi_str->data); // todo? maybe reserve
     if (new_size > chi_str->capacity)
     {
-        chi_errno_t err = chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, new_size));
-        if (err != CHI_ERR_NO_ERR)
-            return err;
+        chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, new_size));
         chi_str->size = new_size;
         chi_str->data[new_size] = 0;
-        return CHI_ERR_NO_ERR;
+        return;
     }
-
     chi_str->data[new_size] = 0;
     chi_str->size = new_size;
-    return CHI_ERR_NO_ERR;
 }
 
-CHI_API chi_errno_t chi_reserve(chi_string* chi_str, size_t new_cap)
+CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap)
 {
-    if (chi_str == NULL)
-        return CHI_ERR_NULL_CHI_STR;
+    chi_str_assert(chi_str);
 
     if (chi_str->data == NULL)
     {
         chi_str->data = alloc_str_ptr(new_cap);
-        if (chi_str->data == NULL)
-            return CHI_ERR_ALLOCATION;
+        chi_assert(chi_str->data, "Allocation error!");
         chi_str->capacity = new_cap;
         chi_str->size = 0;
-        return CHI_ERR_NO_ERR;
+        return;
     }
 
     if (chi_str->capacity >= new_cap)
-        return CHI_ERR_ALREADY_RESERVED;
+        return;
 
     char* new_data = realloc_str_ptr(chi_str->data, new_cap);
-    if (new_data == NULL)
-        return CHI_ERR_ALLOCATION;
-
+    chi_assert(new_data, "Allocation error!");
     chi_str->data = new_data;
     chi_str->capacity = new_cap;
-
-    return CHI_ERR_NO_ERR;
 }
 
 
-CHI_API chi_errno_t chi_shrink_to_fit(chi_string* chi_str)
+CHI_API void chi_shrink_to_fit(chi_string* chi_str)
 {
-    if (chi_str == NULL)
-        return CHI_ERR_NULL_CHI_STR;
-    if (chi_str->data == NULL)
-        return CHI_ERR_NULL_DATA;
+    chi_str_assert(chi_str);
+    data_assert(chi_str->data);
     if (chi_str->size == chi_str->capacity)
-        return CHI_ERR_ALREADY_RESERVED;
+        return;
 
     char* new_data = alloc_str_ptr(chi_str->size);
-    if (new_data == NULL)
-        return CHI_ERR_ALLOCATION;
+    chi_assert(new_data, "Allocation error!");
     copy_from_chi(chi_str, new_data);
     free(chi_str->data);
     chi_str->data = new_data;
     chi_str->capacity = chi_str->size;
-    return CHI_ERR_NO_ERR;
 }
 
 CHI_API chi_string* chi_reset(chi_string* chi_str, const char* data)
