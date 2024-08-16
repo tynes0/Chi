@@ -79,6 +79,8 @@ static const size_t minimum_list_array_capacity = 8;
 static chi_string_list s_string_list_all_chis = { 0 };
 static chi_string_list_array s_string_list_array = { 0 };
 
+static chi_string s_null = { .data = NULL, .size = 0, .capacity = 0 };
+
 /* UTILS BEGIN */
 size_t CHI_CHECK_RETURN _chi_calculate_capacity(size_t old_cap, size_t new_cap)
 {
@@ -91,14 +93,72 @@ size_t CHI_CHECK_RETURN _chi_calculate_capacity(size_t old_cap, size_t new_cap)
     return old_cap;
 }
 
+static void _add_string_to_list(chi_string_list* string_list, chi_string* chi_str)
+{
+#pragma warning(push)
+#pragma warning(disable : 6011) // asserted!
+    if (string_list == NULL)
+        return;
+    if (string_list->data == NULL)
+    {
+        string_list->data = (chi_string**)malloc(sizeof(chi_string*) * minimum_list_capacity);
+        chi_assert(string_list, "Chi initialize failed!");
+        string_list->count = 0;
+        string_list->capacity = minimum_list_capacity;
+    }
+    if (string_list->count == string_list->capacity)
+    {
+        size_t new_cap = _chi_calculate_capacity(string_list->capacity, string_list->capacity + 1);
+        chi_string** temp = (chi_string**)malloc(sizeof(chi_string*) * new_cap);
+        chi_assert(temp, "Allocation error!");
+        memcpy(temp, string_list->data, sizeof(chi_string**) * string_list->count);
+        free(string_list->data);
+        string_list->data = temp;
+        string_list->capacity = new_cap;
+    }
+    string_list->data[string_list->count++] = chi_str;
+#pragma warning(pop)
+}
+
+// todo decrease capacity
+static void _remove_string_from_list(chi_string_list* string_list, const chi_string* chi_str)
+{
+    if (string_list == NULL || string_list->data == NULL)
+        return;
+    chi_assert(string_list->data, "Unexpexted NULL data! Implamentation error!");
+    for (size_t i = 0; i < string_list->count; ++i)
+    {
+        if (string_list->data[i] == chi_str)
+        {
+            if (i != string_list->count - 1)
+            {
+                string_list->data[i] = string_list->data[string_list->count - 1];
+            }
+            string_list->data[string_list->count - 1] = NULL;
+            string_list->count--;
+        }
+    }
+}
+
+static chi_string_list* _top_list()
+{
+    return s_string_list_array.count == 0 ? NULL : &s_string_list_array.lists[s_string_list_array.count - 1];
+}
+
 static chi_string* _chi_create_base(size_t size)
 {
     chi_string* result = alloc_a_chi_str();
     alloc_assert(result);
+    push_chi(result);
     result->data = NULL;
+    result->size = size;
+    if (size == 0)
+    {
+        result->capacity = 0;
+        return result;
+    }
     chi_reserve(result, _chi_calculate_capacity(0, size));
     alloc_assert(result->data);
-    result->size = size;
     return result;
 }
 
@@ -387,60 +447,6 @@ static bool _chi_equal_data_ignorecase(const char* lhs, const char* rhs, size_t 
     return true;
 }
 
-static void _add_string_to_list(chi_string_list* string_list, chi_string* chi_str)
-{
-#pragma warning(push)
-#pragma warning(disable : 6011) // asserted!
-    if (string_list == NULL)
-        return;
-    if(string_list->data == NULL)
-    {
-        string_list->data = (chi_string**)malloc(sizeof(chi_string*) * minimum_list_capacity);
-        chi_assert(string_list, "Chi initialize failed!");
-        string_list->count = 0;
-        string_list->capacity = minimum_list_capacity;
-    }
-    if (string_list->count == string_list->capacity)
-    {
-        size_t new_cap = _chi_calculate_capacity(string_list->capacity, string_list->capacity + 1);
-        chi_string** temp = (chi_string**)malloc(sizeof(chi_string*) * new_cap);
-        chi_assert(temp, "Allocation error!");
-        memcpy(temp, string_list->data, sizeof(chi_string**) * string_list->count);
-        free(string_list->data);
-        string_list->data = temp;
-        string_list->capacity = new_cap;
-    }
-    string_list->data[string_list->count++] = chi_str;
-#pragma warning(pop)
-}
-
-// todo decrease capacity
-static void _remove_string_from_list(chi_string_list* string_list, const chi_string* chi_str)
-{
-    if (string_list == NULL)
-        return;
-    if (string_list->data == NULL)
-        return;
-    chi_assert(string_list->data, "Unexpexted NULL data! Implamentation error!");
-    for (size_t i = 0; i < string_list->count; ++i)
-    {
-        if (string_list->data[i] == chi_str)
-        {
-            if (i != string_list->count - 1)
-            {
-                string_list->data[i] = string_list->data[string_list->count - 1];
-            }
-            string_list->data[string_list->count - 1] = NULL;
-            string_list->count--;
-        } 
-    }
-}
-
-static chi_string_list* _top_list()
-{
-    return s_string_list_array.count == 0 ? NULL : &s_string_list_array.lists[s_string_list_array.count - 1];
-}
-
 static size_t _append_bytes(size_t val, const unsigned char* const first, const size_t count)
 {
     for (size_t i = 0; i < count; ++i)
@@ -491,7 +497,6 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create(const char* data)
     size_t temp_size = strlen(data);
     chi_string* result = _chi_create_base(temp_size);
     copy_to_chi(result, data);
-    push_chi(result);
     return result;
 }
 
@@ -502,14 +507,12 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size)
     chi_string* result = _chi_create_base(size);
     copy_to_chi(result, data);
     result->data[result->size] = 0;
-    push_chi(result);
     return result;
 }
 
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_empty(size_t size)
 {
     chi_string* result = _chi_create_base(size);
-    push_chi(result);
     return result;
 }
 
@@ -579,6 +582,11 @@ CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capac
     result->capacity = capacity;
     push_chi(result);
     return result;
+}
+
+CHI_API CHI_CHECK_RETURN const chi_string* chi_null()
+{
+    return &s_null;
 }
 
 void chi_begin_scope()

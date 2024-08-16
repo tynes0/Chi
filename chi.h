@@ -8,11 +8,8 @@
 #include <stddef.h>
 
 //  #### todolist ####
-// ---- fix assertions ----
-// todo: add n functions to sv
-// improve chi_equal variants
-// todo update for clang
-// todo trim
+// fix assertions
+// update for clang
 
 #ifndef CHI_API
 #define CHI_API // may be change
@@ -47,7 +44,6 @@
 #if defined (__cplusplus)
 #define _CHI_CPP
 #endif // defined (__cplusplus)
-/* config end */
 
 #ifdef _CHI_CPP
 #define _CHI_HEADER_BEGIN       _CHI_PRAGMA(warning(push)) _CHI_PRAGMA(warning(disable : 4190)) extern "C" {
@@ -56,7 +52,6 @@
 #define _CHI_HEADER_BEGIN
 #define _CHI_HEADER_END
 #endif // _CHI_CPP
-
 
 _CHI_HEADER_BEGIN
 
@@ -153,11 +148,18 @@ static const chi_string_view _chi_svnull = { 0, 0 };
 #define CHI_SV(data) chi_sv_create(data)
 
 /**
- * @brief Creates a null `chi_string`.
+ * @brief Returns a null `chi_string`.
  *
  * @return Returns a `chi_string` instance representing a null string.
  */
-#define CHI_SNULL chi_create(NULL)
+#define CHI_SNULL chi_null()
+
+ /**
+  * @brief Creates a null `chi_string`.
+  *
+  * @return Returns a `chi_string` instance representing a null string.
+  */
+#define CHI_CSNULL chi_create(NULL)
 
 /**
  * @brief Represents a null `chi_string_view`.
@@ -331,6 +333,13 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t capacity)
  * @return A pointer to the newly created chi_string.
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capacity);
+
+/**
+ * @brief Returns a chi_string with null data
+ * 
+ * @return chi_string with null data
+ */
+CHI_API CHI_CHECK_RETURN const chi_string* chi_null();
 
 /**
  * @brief Begins a scope for chi_string operations.
