@@ -151,17 +151,16 @@ static chi_string* _chi_create_base(size_t size)
     alloc_assert(result);
     push_chi(result);
     result->data = NULL;
-    result->size = size;
     if (size == 0)
     {
-        result->capacity = 0;
+        result->size = result->capacity = 0;
         return result;
     }
     chi_reserve(result, _chi_calculate_capacity(0, size));
     alloc_assert(result->data);
+    result->size = size;
     return result;
 }
-
 
 static chi_string* _chi_insert_data(chi_string* chi_str, size_t idx, const char* data, size_t data_length)
 {
