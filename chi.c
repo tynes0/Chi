@@ -27,7 +27,7 @@
 #define CHECK_NULL(ptr)                                 do { if(ptr == NULL) { return NULL; } } while(0)
 #define CHECK_NULL2(ptr, retval)                        do { if(ptr == NULL) { return retval; } } while(0)
 #define CHECK_N(ptr, n)                                 do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0) // n should't be const!! 
-#define CHECK_BEGIN_AND_END(size, begin, end)           do { chi_assert(begin < end && begin < size, "range is not verified!"); if(size < end) { end = size; } } while(0) // end shouldn't be const
+#define CHECK_BEGIN_AND_END(size, begin, end)           do { chi_assert(begin <= end && begin < size, "range is not verified!"); if(size < end) { end = size; } } while(0) // end shouldn't be const
 
 #define to_chi_str_impl(buffer_size, format, value)     do { chi_string* result = chi_create_empty(buffer_size); snprintf(result->data, result->size, format, value); return result; } while(0)
 #define chi_to_impl1(chi_str, func)                     do { chi_str_assert(chi_str); data_assert(chi_str->data); return func(chi_str->data); } while(0)
@@ -131,9 +131,7 @@ static void _remove_string_from_list(chi_string_list* string_list, const chi_str
         if (string_list->data[i] == chi_str)
         {
             if (i != string_list->count - 1)
-            {
                 string_list->data[i] = string_list->data[string_list->count - 1];
-            }
             string_list->data[string_list->count - 1] = NULL;
             string_list->count--;
         }
@@ -220,6 +218,23 @@ static chi_string* _chi_append_data(chi_string* chi_str, const char* data, size_
     return chi_str;
 }
 
+static chi_string* _chi_erase_data(chi_string* chi_str, size_t begin, size_t end)
+{
+    CHECK_NULL(chi_str);
+    CHECK_NULL2(chi_str->data, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    size_t removed_part_len = end - begin;
+    if (removed_part_len == chi_str->size)
+    {
+        zero_memory(chi_str->data, chi_str->size);
+        chi_str->size = 0;
+        return chi_str; 
+    }
+    memmove(chi_str->data + begin, chi_str->data + end, chi_str->size - end);
+    chi_str->size -= removed_part_len;
+    return chi_str;
+}
+
 static chi_string* _chi_reset_data(chi_string* chi_str, const char* data, size_t size)
 {
     CHECK_NULL(chi_str);
@@ -273,13 +288,9 @@ static chi_string* _chi_remove_data(chi_string* chi_str, const char* delim, size
     for (size_t i = 0; i < chi_str->size; ++i)
     {
         if (i <= chi_str->size - delim_len && memcmp(chi_str->data + i, delim, delim_len) == 0)
-        {
             i += delim_len - 1;
-        }
         else
-        {
             temp[idx++] = chi_str->data[i];
-        }
     }
 
     free(chi_str->data);
@@ -671,7 +682,7 @@ CHI_API void chi_resize(chi_string* chi_str, size_t new_size)
         chi_clear(chi_str);
         return;
     }
-    data_assert(chi_str->data); // todo? maybe reserve
+
     if (new_size > chi_str->capacity)
     {
         chi_reserve(chi_str, _chi_calculate_capacity(chi_str->capacity, new_size));
@@ -827,6 +838,16 @@ chi_string* chi_insert_sv(chi_string* chi_str, size_t idx, chi_string_view data)
 {
     CHECK_NULL(chi_str);
     return _chi_insert_data(chi_str, idx, data.data, data.size);
+}
+
+chi_string* chi_erase(chi_string* chi_str, size_t begin, size_t end)
+{
+    return _chi_erase_data(chi_str, begin, end);
+}
+
+chi_string* chi_erase_from(chi_string* chi_str, size_t offset)
+{
+    return _chi_erase_data(chi_str, offset, chi_str->size);
 }
 
 CHI_CHECK_RETURN size_t chi_size(const chi_string* chi_str)

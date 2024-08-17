@@ -581,6 +581,34 @@ CHI_API chi_string* chi_insert_cs(chi_string* chi_str, size_t idx, const chi_str
 CHI_API chi_string* chi_insert_sv(chi_string* chi_str, size_t idx, chi_string_view data);
 
 /**
+ * @brief Erases a portion of the chi_string.
+ *
+ * This function erases the characters within the specified range [begin, end) from the chi_string.
+ * If the range is invalid or the string is empty, it asserts with an error message. The size of
+ * the chi_string is adjusted accordingly after the removal of the specified portion.
+ *
+ * @param chi_str The chi_string to erase a portion from.
+ * @param begin The starting position of the range to erase.
+ * @param end The ending position of the range to erase (exclusive).
+ * @return A pointer to the modified chi_string.
+ */
+CHI_API chi_string* chi_erase(chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Erases the characters in the chi_string starting from the specified offset to the end.
+ *
+ * This function erases all characters in the chi_string starting from the specified offset
+ * to the end of the string. If the offset is invalid or the string is empty, it asserts with
+ * an error message. The size of the chi_string is adjusted accordingly after the removal
+ * of the specified portion.
+ *
+ * @param chi_str The chi_string to erase a portion from.
+ * @param offset The position from which characters will be erased until the end of the string.
+ * @return A pointer to the modified chi_string.
+ */
+CHI_API chi_string* chi_erase_from(chi_string* chi_str, size_t offset);
+
+/**
  * @brief Retrieves the size of a chi_string instance.
  * Note: This function using assertion
  * 
@@ -1851,6 +1879,7 @@ CHI_API CHI_CHECK_RETURN unsigned long long chi_sv_toull(chi_string_view sv);
 CHI_API CHI_CHECK_RETURN size_t chi_sv_hash(chi_string_view sv);
 
 /* CHI STRING VIEW END */
+
 
 _CHI_HEADER_END
 
