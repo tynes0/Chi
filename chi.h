@@ -420,6 +420,19 @@ CHI_API chi_string* chi_reset(chi_string* chi_str, const char* data);
 CHI_API chi_string* chi_reset_n(chi_string* chi_str, const char* data, size_t size);
 
 /**
+ * @brief Resets the contents of a chi_string to match another chi_string.
+ *
+ * This function resets the contents of the destination chi_string (`chi_str`) to match
+ * the data and size of the source chi_string (`data`). The destination chi_string is modified
+ * in place. If the source chi_string is NULL, the function asserts with an error message.
+ *
+ * @param chi_str The chi_string to be reset.
+ * @param data The chi_string whose contents will be copied to `chi_str`.
+ * @return A pointer to the modified `chi_str`.
+ */
+CHI_API chi_string* chi_reset_cs(chi_string* chi_str, const chi_string* data);
+
+/**
  * @brief Resets a chi_string instance with another chi_string.
  * 
  * @param chi_str The chi_string to reset.
@@ -434,7 +447,18 @@ CHI_API chi_string* chi_reset_from_sv(chi_string* chi_str, chi_string_view sv);
  * @param chi_str The chi_string to get the data of.
  * @return A pointer to the character array.
  */
-CHI_API CHI_CHECK_RETURN char* chi_get(const chi_string* chi_str);
+CHI_API CHI_CHECK_RETURN char* chi_get(chi_string* chi_str);
+
+/**
+ * @brief Returns the underlying C string (null-terminated) from a chi_string.
+ *
+ * This function returns the internal null-terminated C string stored within a chi_string.
+ * If the chi_string is NULL, the function asserts with an error message.
+ *
+ * @param chi_str The chi_string from which to retrieve the C string.
+ * @return A pointer to the internal null-terminated C string.
+ */
+CHI_API CHI_CHECK_RETURN const char* chi_cstr(const chi_string* chi_str);
 
 /**
  * @brief Accesses the character at the specified index.

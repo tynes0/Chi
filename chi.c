@@ -254,8 +254,8 @@ static chi_string* _chi_reset_data(chi_string* chi_str, const char* data, size_t
         chi_reserve(chi_str, _chi_calculate_capacity(0, size));
     if (chi_str->data == NULL)
         return chi_str;
-    copy_to_chi(chi_str, data);
     chi_str->size = size;
+    copy_to_chi(chi_str, data);
     return chi_str;
 }
 
@@ -742,12 +742,24 @@ CHI_API chi_string* chi_reset_n(chi_string* chi_str, const char* data, size_t si
     return _chi_reset_data(chi_str, data, size);
 }
 
+CHI_API chi_string* chi_reset_cs(chi_string* chi_str, const chi_string* data)
+{
+    data_assert(data);
+    return _chi_reset_data(chi_str, data->data, data->size);
+}
+
 chi_string* chi_reset_from_sv(chi_string* chi_str, const chi_string_view sv)
 {
     return _chi_reset_data(chi_str, sv.data, sv.size);
 }
 
-CHI_CHECK_RETURN char* chi_get(const chi_string* chi_str)
+CHI_CHECK_RETURN char* chi_get(chi_string* chi_str)
+{
+    chi_assert(chi_str != NULL, "NULL chi_string!");
+    return chi_str->data;
+}
+
+CHI_API CHI_CHECK_RETURN char* chi_cstr(const chi_string* chi_str)
 {
     chi_assert(chi_str != NULL, "NULL chi_string!");
     return chi_str->data;
