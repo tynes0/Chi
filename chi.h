@@ -1249,7 +1249,6 @@ CHI_API chi_string* chi_to_lower_ip(chi_string* chi_str, size_t begin, size_t en
  */
 CHI_API chi_string* chi_to_lower(chi_string* chi_str);
 
-
 /**
  * @brief Counts the occurrences of a character in the chi_string from begin to end.
  *
@@ -1437,6 +1436,175 @@ CHI_API CHI_CHECK_RETURN char chi_sample_ip(const chi_string* chi_str, size_t be
  * @return A randomly selected character from the chi_string.
  */
 CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are lowercase.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is lowercase.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are lowercase, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_islower_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are lowercase.
+ *
+ * This function checks if all characters in the chi_string are lowercase by
+ * calling `chi_islower_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are lowercase, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_islower(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are uppercase.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is uppercase.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are uppercase, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isupper_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are uppercase.
+ *
+ * This function checks if all characters in the chi_string are uppercase by
+ * calling `chi_isupper_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are uppercase, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isupper(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are alphanumeric.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is alphanumeric.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are alphanumeric, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isalnum_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are alphanumeric.
+ *
+ * This function checks if all characters in the chi_string are alphanumeric by
+ * calling `chi_isalnum_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are alphanumeric, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isalnum(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are alphabetic.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is alphabetic.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are alphabetic, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isalpha_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are alphabetic.
+ *
+ * This function checks if all characters in the chi_string are alphabetic by
+ * calling `chi_isalpha_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are alphabetic, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isalpha(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are digits.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is a digit.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are digits, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isdigit_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are digits.
+ *
+ * This function checks if all characters in the chi_string are digits by
+ * calling `chi_isdigit_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are digits, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isdigit(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are printable.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is printable.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are printable, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isprintable_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are printable.
+ *
+ * This function checks if all characters in the chi_string are printable by
+ * calling `chi_isprintable_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are printable, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isprintable(const chi_string* chi_str);
+
+/**
+ * @brief Checks if all characters in the specified range of the string are whitespace.
+ *
+ * This function iterates through the characters in the chi_string from the `begin`
+ * to the `end` position and checks if each character is a whitespace character.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @param begin The start index of the range to check.
+ * @param end The end index of the range to check.
+ * @return `true` if all characters in the specified range are whitespace, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isspace_ip(const chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Checks if all characters in the chi_string are whitespace.
+ *
+ * This function checks if all characters in the chi_string are whitespace by
+ * calling `chi_isspace_ip` with the full range of the string.
+ *
+ * @param chi_str Pointer to the chi_string structure.
+ * @return `true` if all characters in the chi_string are whitespace, otherwise `false`.
+ */
+CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str);
+
 
 
 /* CHI STRING END */

@@ -1475,6 +1475,118 @@ CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str)
     return chi_sample_ip(chi_str, 0, chi_str->size);
 }
 
+CHI_API CHI_CHECK_RETURN bool chi_islower_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!islower(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_islower(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_islower_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isupper_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isupper(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isupper(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_isupper_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isalnum_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isalnum(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isalnum(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_isalnum_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isalpha_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isalpha(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isalpha(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_isalpha_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isdigit_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isdigit(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isdigit(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_isdigit_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isprintable_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isprint(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isprintable(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_isprintable_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isspace_ip(const chi_string* chi_str, size_t begin, size_t end)
+{
+    chi_str_assert(chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isspace(chi_str->data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str)
+{
+    chi_str_assert(chi_str);
+    return chi_islower_ip(chi_str, 0, chi_str->size);
+}
+
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data)
 {      
     CHECK_NULL2(data, CHI_SVNULL);
