@@ -118,9 +118,14 @@ typedef struct _chi_string_view chi_string_view;
 static const size_t chi_npos = ((size_t)-1);
 
 /**
+ * @brief Represents a null `chi_string` with zero size, capacity and null data.
+ */
+static const chi_string* chi_snull;
+
+/**
  * @brief Represents a null `chi_string_view` with zero size and null data.
  */
-static const chi_string_view _chi_svnull = { 0, 0 };
+static const chi_string_view chi_svnull = { 0, 0 };
 
 /* helper macros begin */
 
@@ -152,7 +157,7 @@ static const chi_string_view _chi_svnull = { 0, 0 };
  *
  * @return Returns a `chi_string` instance representing a null string.
  */
-#define CHI_SNULL chi_null()
+#define CHI_SNULL chi_snull
 
  /**
   * @brief Creates a null `chi_string`.
@@ -164,7 +169,7 @@ static const chi_string_view _chi_svnull = { 0, 0 };
 /**
  * @brief Represents a null `chi_string_view`.
  */
-#define CHI_SVNULL _chi_svnull
+#define CHI_SVNULL chi_svnull
 
 /**
  * @brief Format specifier for printing a `chi_string` or `chi_string_view` with `printf`.
@@ -333,13 +338,6 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t capacity)
  * @return A pointer to the newly created chi_string.
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capacity);
-
-/**
- * @brief Returns a chi_string with null data
- * 
- * @return chi_string with null data
- */
-CHI_API CHI_CHECK_RETURN const chi_string* chi_null();
 
 /**
  * @brief Begins a scope for chi_string operations.

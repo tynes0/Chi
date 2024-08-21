@@ -60,6 +60,9 @@ struct _chi_string
     size_t capacity;
 };
 
+static const chi_string _s_chi_snull    = { .data = NULL, .size = 0, .capacity = 0 };
+static const chi_string* _chi_snull     = &_s_chi_snull;
+
 typedef struct
 {
     chi_string** data;
@@ -78,8 +81,6 @@ static const size_t minimum_list_capacity = 32;
 static const size_t minimum_list_array_capacity = 8;
 static chi_string_list s_string_list_all_chis = { 0 };
 static chi_string_list_array s_string_list_array = { 0 };
-
-static chi_string s_null = { .data = NULL, .size = 0, .capacity = 0 };
 
 /* UTILS BEGIN */
 size_t CHI_CHECK_RETURN _chi_calculate_capacity(size_t old_cap, size_t new_cap)
@@ -594,11 +595,6 @@ CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capac
     return result;
 }
 
-CHI_API CHI_CHECK_RETURN const chi_string* chi_null()
-{
-    return &s_null;
-}
-
 void chi_begin_scope()
 {
     if (s_string_list_array.lists == NULL)
@@ -759,7 +755,7 @@ CHI_CHECK_RETURN char* chi_get(chi_string* chi_str)
     return chi_str->data;
 }
 
-CHI_API CHI_CHECK_RETURN char* chi_cstr(const chi_string* chi_str)
+CHI_API CHI_CHECK_RETURN const char* chi_cstr(const chi_string* chi_str)
 {
     chi_assert(chi_str != NULL, "NULL chi_string!");
     return chi_str->data;
