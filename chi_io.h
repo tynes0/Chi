@@ -137,6 +137,16 @@ CHI_API bool chi_print(const chi_string* chi_str);
  */
 CHI_API bool chi_println(const chi_string* chi_str);
 
+/**
+ * @brief Writes the contents of the chi_string to standard error.
+ *
+ * @param chi_str The string to write from.
+ * @return true or false indicating success or failure.
+ */
+CHI_API bool chi_printerr(const chi_string* chi_str);
+
+
+
 /* CHI STRING END */
 
 /* CHI STRING VIEW BEGIN */

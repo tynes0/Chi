@@ -60,8 +60,8 @@ struct _chi_string
     size_t capacity;
 };
 
-static const chi_string _s_chi_snull    = { .data = NULL, .size = 0, .capacity = 0 };
-static const chi_string* _chi_snull     = &_s_chi_snull;
+static const chi_string s_chi_snull    = { .data = NULL, .size = 0, .capacity = 0 };
+static const chi_string* chi_snull     = &s_chi_snull;
 
 typedef struct
 {
@@ -156,7 +156,6 @@ static chi_string* _chi_create_base(size_t size)
         return result;
     }
     chi_reserve(result, _chi_calculate_capacity(0, size));
-    alloc_assert(result->data);
     result->size = size;
     return result;
 }
@@ -524,6 +523,24 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size)
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_empty(size_t size)
 {
     chi_string* result = _chi_create_base(size);
+    return result;
+}
+
+CHI_API CHI_CHECK_RETURN chi_string* chi_create_with_capacity(size_t capacity)
+{
+    chi_string* result = alloc_a_chi_str();
+    alloc_assert(result);
+    push_chi(result);
+    result->data = NULL; 
+    result->size = 0;
+    if (capacity == 0)
+    {
+        result->capacity = 0;
+        return result;
+    }
+    if (capacity < 2)
+        capacity = 2;
+    chi_reserve(result, capacity);
     return result;
 }
 

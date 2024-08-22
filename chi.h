@@ -275,6 +275,14 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size)
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_empty(size_t size);
 
 /**
+ * @brief Creates a new empty chi_string instance with the specified capacity.
+ *
+ * @param capacity The capacity of the string to create.
+ * @return A pointer to the newly created chi_string.
+ */
+CHI_API CHI_CHECK_RETURN chi_string* chi_create_with_capacity(size_t capacity);
+
+/**
  * @brief Creates a new chi_string instance filled with the specified character.
  * 
  * @param ch The character to fill the string with.

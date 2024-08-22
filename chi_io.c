@@ -169,6 +169,11 @@ bool chi_println(const chi_string* chi_str)
     return _put_newline();
 }
 
+CHI_API chi_printerr(const chi_string* chi_str)
+{
+    return chi_write(chi_str, stderr);
+}
+
 bool chi_sv_writef(chi_string_view sv, FILE* file)
 {
     file_assert(file);
