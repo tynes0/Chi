@@ -169,7 +169,7 @@ bool chi_println(const chi_string* chi_str)
     return _put_newline();
 }
 
-CHI_API chi_printerr(const chi_string* chi_str)
+CHI_API bool chi_printerr(const chi_string* chi_str)
 {
     return chi_write(chi_str, stderr);
 }
