@@ -200,3 +200,9 @@ bool chi_sv_println(chi_string_view sv)
         return success;
     return _put_newline();
 }
+
+CHI_API bool chi_sv_printerr(chi_string_view sv)
+{
+    data_assert(sv.data);
+    return _write_data(sv.data, sv.size, stderr);
+}

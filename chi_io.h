@@ -185,6 +185,14 @@ CHI_API bool chi_sv_print(chi_string_view sv);
  */
 CHI_API bool chi_sv_println(chi_string_view sv);
 
+/**
+ * @brief Writes the contents of the chi_string_view to standard error.
+ *
+ * @param sv The string view to write from.
+ * @return true or false indicating success or failure.
+ */
+CHI_API bool chi_sv_printerr(chi_string_view sv);
+
 /* CHI STRING VIEW END */
 
 _CHI_HEADER_END
