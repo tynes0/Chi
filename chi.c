@@ -1330,7 +1330,6 @@ CHI_API chi_string* chi_to_lower_ip(chi_string* chi_str, size_t begin, size_t en
     for (size_t i = begin; i < end; ++i)
         if (chi_str->data[i] >= 65 && chi_str->data[i] <= 90)
             chi_str->data[i] += 32;
-
     return chi_str;
 }
 
@@ -1338,6 +1337,28 @@ CHI_API chi_string* chi_to_lower(chi_string* chi_str)
 {
     CHECK_NULL(chi_str);
     return chi_to_lower_ip(chi_str, 0, chi_str->size);
+}
+
+CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases_ip(chi_string* chi_str, size_t begin, size_t end)
+{
+    CHECK_NULL(chi_str);
+    CHECK_NULL2(chi_str->data, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+
+    for (size_t i = begin; i < end; ++i)
+    {
+        if (chi_str->data[i] >= 97 && chi_str->data[i] <= 122)
+            chi_str->data[i] -= 32;
+        else if (chi_str->data[i] >= 65 && chi_str->data[i] <= 90)
+            chi_str->data[i] += 32;
+    }
+    return chi_str;
+}
+
+CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases(chi_string* chi_str)
+{
+    CHECK_NULL(chi_str);
+    return chi_switch_cases_ip(chi_str, 0, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_ip(const chi_string* chi_str, char ch, size_t begin, size_t end)

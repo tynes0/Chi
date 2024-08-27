@@ -1257,6 +1257,31 @@ CHI_API chi_string* chi_to_lower_ip(chi_string* chi_str, size_t begin, size_t en
 CHI_API chi_string* chi_to_lower(chi_string* chi_str);
 
 /**
+ * @brief Switches the case of characters in the given range of the chi_string.
+ *
+ * This function iterates over the characters in the specified range [begin, end)
+ * and switches their cases. Lowercase characters are converted to uppercase and
+ * uppercase characters are converted to lowercase.
+ *
+ * @param chi_str The chi_string to modify.
+ * @param begin The starting index of the range.
+ * @param end The ending index of the range.
+ * @return chi_string* The modified chi_string with switched cases.
+ */
+CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases_ip(chi_string* chi_str, size_t begin, size_t end);
+
+/**
+ * @brief Switches the case of all characters in the chi_string.
+ *
+ * This function switches the case of each character in the chi_string. Lowercase
+ * characters are converted to uppercase and uppercase characters are converted to lowercase.
+ *
+ * @param chi_str The chi_string to modify.
+ * @return chi_string* The modified chi_string with switched cases.
+ */
+CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases(chi_string* chi_str);
+
+/**
  * @brief Counts the occurrences of a character in the chi_string from begin to end.
  *
  * This function counts how many times the specified character appears in the chi_string from the begin index to the end index.
@@ -1450,6 +1475,7 @@ CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str);
  * When `ignore` is set to `true`, functions like `chi_islower`, `chi_isupper`,
  * `chi_isalnum`, `chi_isalpha`, `chi_isdigit`, and their `_ip` variants will
  * disregard space characters when determining if the string meets the specified condition.
+ * Note: By default, the ignore is disabled.
  *
  * @param ignore Flag to indicate whether space characters should be ignored.
  */
