@@ -10,6 +10,7 @@
 //  #### todolist ####
 // fix assertions
 // update for clang
+// ignore space func for ctype functions
 
 #ifndef CHI_API
 #define CHI_API // may be change
@@ -1442,6 +1443,17 @@ CHI_API CHI_CHECK_RETURN char chi_sample_ip(const chi_string* chi_str, size_t be
  * @return A randomly selected character from the chi_string.
  */
 CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str);
+
+/**
+ * @brief Sets whether to ignore space characters in certain validation functions.
+ *
+ * When `ignore` is set to `true`, functions like `chi_islower`, `chi_isupper`,
+ * `chi_isalnum`, `chi_isalpha`, `chi_isdigit`, and their `_ip` variants will
+ * disregard space characters when determining if the string meets the specified condition.
+ *
+ * @param ignore Flag to indicate whether space characters should be ignored.
+ */
+CHI_API void chi_ignore_spaces(bool ignore);
 
 /**
  * @brief Checks if all characters in the specified range of the string are lowercase.
