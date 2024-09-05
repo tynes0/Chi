@@ -371,6 +371,18 @@ CHI_API void chi_cleanup();
 CHI_API void chi_free(chi_string* chi_str);
 
 /**
+ * @brief Frees an array of chi_string pointers.
+ *
+ * This function frees each individual `chi_string` in the provided array and then
+ * frees the array itself. After freeing, the pointer to the array is set to `NULL`
+ * to prevent dangling pointers.
+ *
+ * @param chi_str_array The array of `chi_string*` to be freed.
+ * @param size The number of elements in the `chi_string` array.
+ */
+CHI_API void chi_str_array_free(chi_string** chi_str_array, size_t size);
+
+/**
  * @brief Clears the contents of a chi_string instance.
  * 
  * @param chi_str The chi_string to clear.
@@ -811,6 +823,75 @@ CHI_API chi_string* chi_copy(chi_string* chi_str, const chi_string* src_cs);
 CHI_API CHI_CHECK_RETURN chi_string* chi_substring(const chi_string* chi_str, size_t offset, size_t length);
 
 /**
+ * @brief Splits the chi_string by spaces.
+ *
+ * This function splits the provided `chi_string` by the space character (" ") and
+ * returns an array of `chi_string*` containing the split substrings. The number of
+ * substrings is stored in the provided `size` pointer.
+ *
+ * @param chi_str The `chi_string` to be split.
+ * @param size Pointer to store the number of resulting substrings.
+ * @return chi_string** An array of `chi_string*` containing the split parts.
+ */
+CHI_API CHI_CHECK_RETURN chi_string** chi_split(const chi_string* chi_str, size_t* size);
+
+/**
+ * @brief Splits the chi_string by a specified delimiter character.
+ *
+ * This function splits the provided `chi_string` using a single character delimiter
+ * and returns an array of `chi_string*` containing the split substrings. The number of
+ * substrings is stored in the provided `size` pointer.
+ *
+ * @param chi_str The `chi_string` to be split.
+ * @param delim The character to use as the delimiter.
+ * @param size Pointer to store the number of resulting substrings.
+ * @return chi_string** An array of `chi_string*` containing the split parts.
+ */
+CHI_API CHI_CHECK_RETURN chi_string** chi_split_c(const chi_string* chi_str, char delim, size_t* size);
+
+/**
+ * @brief Splits the chi_string by a specified delimiter string.
+ *
+ * This function splits the provided `chi_string` using a string delimiter and
+ * returns an array of `chi_string*` containing the split substrings. The number of
+ * substrings is stored in the provided `size` pointer.
+ *
+ * @param chi_str The `chi_string` to be split.
+ * @param delim The string to use as the delimiter.
+ * @param size Pointer to store the number of resulting substrings.
+ * @return chi_string** An array of `chi_string*` containing the split parts.
+ */
+CHI_API CHI_CHECK_RETURN chi_string** chi_split_s(const chi_string* chi_str, const char* delim, size_t* size);
+
+/**
+ * @brief Splits the chi_string by a chi_string delimiter.
+ *
+ * This function splits the provided `chi_string` using another `chi_string` as the delimiter
+ * and returns an array of `chi_string*` containing the split substrings. The number of
+ * substrings is stored in the provided `size` pointer.
+ *
+ * @param chi_str The `chi_string` to be split.
+ * @param delim The `chi_string` to use as the delimiter.
+ * @param size Pointer to store the number of resulting substrings.
+ * @return chi_string** An array of `chi_string*` containing the split parts.
+ */
+CHI_API CHI_CHECK_RETURN chi_string** chi_split_cs(const chi_string* chi_str, const chi_string* delim, size_t* size);
+
+/**
+ * @brief Splits the chi_string by a chi_string_view delimiter.
+ *
+ * This function splits the provided `chi_string` using a `chi_string_view` as the delimiter
+ * and returns an array of `chi_string*` containing the split substrings. The number of
+ * substrings is stored in the provided `size` pointer.
+ *
+ * @param chi_str The `chi_string` to be split.
+ * @param delim The `chi_string_view` to use as the delimiter.
+ * @param size Pointer to store the number of resulting substrings.
+ * @return chi_string** An array of `chi_string*` containing the split parts.
+ */
+CHI_API CHI_CHECK_RETURN chi_string** chi_split_sv(const chi_string* chi_str, chi_string_view delim, size_t* size);
+
+/**
  * @brief Removes repeated consecutive characters from the `chi_string`.
  * Note: This function will keep only the first occurrence of each repeated character.
  * 
@@ -895,7 +976,6 @@ CHI_API chi_string* chi_trim_right(chi_string* chi_str);
  * @return The trimmed chi_string.
  */
 CHI_API chi_string* chi_trim(chi_string* chi_str);
-
 
 /**
  * @brief Replaces all occurrences of a character with another character in the `chi_string`.
@@ -1268,7 +1348,7 @@ CHI_API chi_string* chi_to_lower(chi_string* chi_str);
  * @param end The ending index of the range.
  * @return chi_string* The modified chi_string with switched cases.
  */
-CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases_ip(chi_string* chi_str, size_t begin, size_t end);
+CHI_API chi_string* chi_switch_cases_ip(chi_string* chi_str, size_t begin, size_t end);
 
 /**
  * @brief Switches the case of all characters in the chi_string.
@@ -1279,7 +1359,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases_ip(chi_string* chi_str, si
  * @param chi_str The chi_string to modify.
  * @return chi_string* The modified chi_string with switched cases.
  */
-CHI_API CHI_CHECK_RETURN chi_string* chi_switch_cases(chi_string* chi_str);
+CHI_API chi_string* chi_switch_cases(chi_string* chi_str);
 
 /**
  * @brief Counts the occurrences of a character in the chi_string from begin to end.
@@ -1304,6 +1384,84 @@ CHI_API CHI_CHECK_RETURN size_t chi_count_ip(const chi_string* chi_str, char ch,
  * @return Number of occurrences of the character.
  */
 CHI_API CHI_CHECK_RETURN size_t chi_count(const chi_string* chi_str, char ch);
+
+/**
+ * @brief Counts occurrences of a substring within a range of the chi_string.
+ *
+ * This function counts how many times a specified substring occurs within a portion of
+ * the `chi_string`, defined by the `begin` and `end` positions.
+ *
+ * @param chi_str The `chi_string` in which to count occurrences.
+ * @param data The substring to search for.
+ * @param begin The starting index of the range.
+ * @param end The ending index of the range.
+ * @return size_t The number of occurrences of the substring.
+ */
+CHI_API CHI_CHECK_RETURN size_t chi_count_s_ip(const chi_string* chi_str, const char* data, size_t begin, size_t end);
+
+/**
+ * @brief Counts occurrences of a substring within the chi_string.
+ *
+ * This function counts how many times a specified substring occurs within the entire
+ * `chi_string`.
+ *
+ * @param chi_str The `chi_string` in which to count occurrences.
+ * @param data The substring to search for.
+ * @return size_t The number of occurrences of the substring.
+ */
+CHI_API CHI_CHECK_RETURN size_t chi_count_s(const chi_string* chi_str, const char* data);
+
+/**
+ * @brief Counts occurrences of another chi_string within a range of the chi_string.
+ *
+ * This function counts how many times a specified `chi_string` occurs within a portion
+ * of another `chi_string`, defined by the `begin` and `end` positions.
+ *
+ * @param chi_str The `chi_string` in which to count occurrences.
+ * @param data The `chi_string` to search for.
+ * @param begin The starting index of the range.
+ * @param end The ending index of the range.
+ * @return size_t The number of occurrences of the `chi_string`.
+ */
+CHI_API CHI_CHECK_RETURN size_t chi_count_cs_ip(const chi_string* chi_str, const chi_string* data, size_t begin, size_t end);
+
+/**
+ * @brief Counts occurrences of another chi_string within the chi_string.
+ *
+ * This function counts how many times a specified `chi_string` occurs within the entire
+ * `chi_string`.
+ *
+ * @param chi_str The `chi_string` in which to count occurrences.
+ * @param data The `chi_string` to search for.
+ * @return size_t The number of occurrences of the `chi_string`.
+ */
+CHI_API CHI_CHECK_RETURN size_t chi_count_cs(const chi_string* chi_str, const chi_string* data);
+
+/**
+ * @brief Counts occurrences of a chi_string_view within a range of the chi_string.
+ *
+ * This function counts how many times a specified `chi_string_view` occurs within a
+ * portion of the `chi_string`, defined by the `begin` and `end` positions.
+ *
+ * @param chi_str The `chi_string` in which to count occurrences.
+ * @param data The `chi_string_view` to search for.
+ * @param begin The starting index of the range.
+ * @param end The ending index of the range.
+ * @return size_t The number of occurrences of the `chi_string_view`.
+ */
+CHI_API CHI_CHECK_RETURN size_t chi_count_sv_ip(const chi_string* chi_str, chi_string_view data, size_t begin, size_t end);
+
+/**
+ * @brief Counts occurrences of a chi_string_view within the chi_string.
+ *
+ * This function counts how many times a specified `chi_string_view` occurs within the
+ * entire `chi_string`.
+ *
+ * @param chi_str The `chi_string` in which to count occurrences.
+ * @param data The `chi_string_view` to search for.
+ * @return size_t The number of occurrences of the `chi_string_view`.
+ */
+CHI_API CHI_CHECK_RETURN size_t chi_count_sv(const chi_string* chi_str, chi_string_view data);
 
 /**
  * @brief Counts the characters in the chi_string that satisfy a predicate from begin to end.

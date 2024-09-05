@@ -12,8 +12,10 @@
 #define alloc_assert(block)         chi_assert(block != NULL, "Allocation failed!")
 #define data_assert(block)          chi_assert(block != NULL, "NULL data!")
 
-#define CHECK_NULL(ptr, retval)     do { if(ptr == NULL) { return retval; } } while(0)
-#define CHECK_N(ptr, n)             do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0)
+#define if_null_write_empty(data, file)         do { if(data == NULL) { return _write_data("", 1, file); } } while(0)
+#define if_null_write_empty_fp(data, fp, om)    do { if(data == NULL) { return _write_data_fp("", 1, fp, om); } } while(0)
+#define CHECK_NULL(ptr, retval)                 do { if(ptr == NULL) { return retval; } } while(0)
+#define CHECK_N(ptr, n)                         do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0)
 
 #define MAX_BUFFER_LEN 8192
 
@@ -115,24 +117,24 @@ bool chi_read_to_end(chi_string* chi_str, FILE* file)
 bool chi_write(const chi_string* chi_str, FILE* file)
 {
     chi_str_assert(chi_str);
-    data_assert(chi_str->data);
     file_assert(file);
+    if_null_write_empty(chi_str->data, file);
     return _write_data(chi_str->data, chi_str->size, file);
 }
 
 bool chi_write_fp(const chi_string* chi_str, const char* filepath)
 {
     chi_str_assert(chi_str);
-    data_assert(chi_str->data);
     chi_assert(filepath != NULL, "NULL filepath!");
+    if_null_write_empty_fp(chi_str->data, filepath, "w+");
     return _write_data_fp(chi_str->data, chi_str->size, filepath, "w+");
  }
 
 CHI_API bool chi_app_to(const chi_string* chi_str, const char* filepath)
 {
     chi_str_assert(chi_str);
-    data_assert(chi_str->data);
     chi_assert(filepath != NULL, "NULL filepath!");
+    if_null_write_empty_fp(chi_str->data, filepath, "a+");
     return _write_data_fp(chi_str->data, chi_str->size, filepath, "a+");
 }
 
@@ -188,13 +190,11 @@ bool chi_sv_writefp(chi_string_view sv, const char* filepath)
 
 bool chi_sv_print(chi_string_view sv)
 {
-    data_assert(sv.data);
     return _write_data(sv.data, sv.size, stdout);
 }
 
 bool chi_sv_println(chi_string_view sv)
 {
-    data_assert(sv.data);
     bool success = _write_data(sv.data, sv.size, stdout);
     if (!success)
         return success;
@@ -203,6 +203,5 @@ bool chi_sv_println(chi_string_view sv)
 
 CHI_API bool chi_sv_printerr(chi_string_view sv)
 {
-    data_assert(sv.data);
     return _write_data(sv.data, sv.size, stderr);
 }
