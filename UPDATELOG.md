@@ -31,3 +31,9 @@
 * Update 1.19.2: chi_count_sv_ip & chi_count_sv functions has been added.
 * Update 1.20.0: chi_split function has been added.
 * Update 1.20.1: chi_split_c, chi_split_s, chi_split_cs, chi_split_sv functions has been added.
+* Update 1.20.2: chi_str_array_free has been added.
+* Update 1.21.0: Instead of string_list and string_list_array, there is now pointer_list and pointer_list_array. Functions that use these structures have been updated according to the change. (Update 1.21.1)
+* Update 1.21.1: The implementation functions _add_string_to_list and _remove_str_from_list have been removed and replaced with _add_ptr_to_list and _remove_ptr_from_list. The _top_list function has been updated to take a pointer_list_array parameter and return a pointer_list.
+* Update 1.21.2: Now not only chi_strings but also all pointers created in chi are freed with chi_cleanup or chi_begin_scope - chi_end_scope.
+* Update 1.21.3: chi_str_array_free function has been updated. If the pointer we delete with this function is in our pointer list, it is also removed from the list.
+* Update 1.22.0: Mini update -> To make it easier for those who want to examine the implementation code, the defined macros are separated into lines according to their types.
