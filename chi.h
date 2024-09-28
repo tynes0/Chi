@@ -8,9 +8,7 @@
 #include <stddef.h>
 
 //  #### todolist ####
-// fix assertions
 // update for clang
-// ignore space func for ctype functions
 
 #ifndef CHI_API
 #define CHI_API // may be change
@@ -194,31 +192,66 @@ static const chi_string_view chi_svnull = { 0, 0 };
 #define CHI_SV_ARG(chi_s) (unsigned int)chi_sv_size(chi_s), chi_sv_get(chi_s)
 
 /**
- * @brief Accesses the character at the specified index in a `chi_string`.
+ * @brief Accesses an element of the chi_string at a specific index.
  *
- * @param chi The `chi_string` instance.
+ * This macro returns the character at the given `idx` in the `chi_string`.
+ * If the string is not constant, the character can be modified.
+ * If the string is constant, the returned character is read-only.
+ *
+ * @param chi The chi_string to access.
  * @param idx The index of the character to access.
- * @return Returns a reference to the character at the specified index.
- */
-#define CHI_AT(chi, idx) (*chi_at(chi, idx))
+ * @return The character at the specified index.
+  */
+#define CHI_AT(chi, idx) ((!chi_is_const(chi)) ? (*chi_at(chi, idx)) : (chi_cat(chi, idx)))
 
 /**
- * @brief Accesses the first character in a `chi_string`.
+ * @brief Accesses the first character of the chi_string.
  *
- * @param chi The `chi_string` instance.
- * @return Returns a reference to the first character.
+ * This macro returns the first character of the `chi_string`.
+ * If the string is not constant, the character can be modified.
+ * If the string is constant, the returned character is read-only.
+ *
+ * @param chi The chi_string to access.
+ * @return The first character of the string.
  */
-#define CHI_FRONT(chi) (*chi_front(chi))
+#define CHI_FRONT(chi) ((!chi_is_const(chi)) ? (*chi_at(chi, 0)) : (chi_cat(chi, 0)))
 
 /**
- * @brief Accesses the last character in a `chi_string`.
+ * @brief Accesses the last character of the chi_string.
  *
- * @param chi The `chi_string` instance.
- * @return Returns a reference to the last character.
+ * This macro returns the last character of the `chi_string`.
+ * If the string is not constant, the character can be modified.
+ * If the string is constant, the returned character is read-only.
+ *
+ * @param chi The chi_string to access.
+ * @return The last character of the string.
  */
-#define CHI_BACK(chi) (*chi_back(chi))
+#define CHI_BACK(chi) ((!chi_is_const(chi)) ? (*chi_at(chi, chi_size(chi) - 1)) : (chi_cat(chi, chi_size(chi) - 1)))
 
-                  
+/**
+ * @brief Returns the pointer to the beginning of the chi_string.
+ *
+ * This macro returns a pointer to the first character of the `chi_string`.
+ * If the string is not constant, the pointer allows modification of the string's content.
+ * If the string is constant, the returned pointer is read-only.
+ *
+ * @param chi The chi_string to access.
+ * @return A pointer to the first character of the string.
+ */
+#define CHI_BEGIN(chi) ((!chi_is_const(chi)) ? (chi_begin(chi)) : (chi_cbegin(chi)))
+
+/**
+ * @brief Returns the pointer to the end of the chi_string.
+ *
+ * This macro returns a pointer to the position after the last character of the `chi_string`.
+ * If the string is not constant, the pointer allows modification of the string's content.
+ * If the string is constant, the returned pointer is read-only.
+ *
+ * @param chi The chi_string to access.
+ * @return A pointer to the end of the string.
+ */
+#define CHI_END(chi) ((!chi_is_const(chi)) ? (chi_end(chi)) : (chi_cend(chi)))
+ 
 /* helper macros end */
 
 /**
@@ -247,6 +280,30 @@ CHI_API CHI_CHECK_RETURN size_t chi_hash_s(const char* str);
  * @param enable A boolean value to enable (true) or disable (false) the check.
  */
 CHI_API void chi_enable_check_n(bool enable);
+
+/**
+ * @brief Removes a memory block from cleanup operations.
+ *
+ * This function prevents a specific memory block from being freed during
+ * the usual cleanup process. It removes the block from both internal tracking
+ * mechanisms, ensuring that it won't be freed by `chi_cleanup` or within a
+ * `chi_begin_scope`/`chi_end_scope` block.
+ *
+ * @param block Pointer to the memory block that should be ignored during cleanup.
+ */
+CHI_API void chi_ignore_freeing(void* block);
+
+/**
+ * @brief Adds a memory block to the free list for future cleanup.
+ *
+ * This function adds a pointer to an internal list, marking it to be
+ * freed later. The memory block will be automatically cleaned up either
+ * through a `chi_cleanup` call or when the memory scope ends (`chi_begin_scope`/`chi_end_scope`).
+ *
+ * @param block Pointer to the memory block that will be added to the free list.
+ * @param is_chi bool value that checks whether the pointer is chi.
+ */
+CHI_API void chi_add_to_the_free_list(void* block, bool is_chi);
 
 /* CHI STRING BEGIN */
 
@@ -436,7 +493,7 @@ CHI_API chi_string* chi_reset(chi_string* chi_str, const char* data);
  * @param n The size of the new data.
  * @return A pointer to the reset chi_string.
  */
-CHI_API chi_string* chi_reset_n(chi_string* chi_str, const char* data, size_t size);
+CHI_API chi_string* chi_reset_n(chi_string* chi_str, const char* data, size_t n);
 
 /**
  * @brief Resets the contents of a chi_string to match another chi_string.
@@ -480,33 +537,72 @@ CHI_API CHI_CHECK_RETURN char* chi_get(chi_string* chi_str);
 CHI_API CHI_CHECK_RETURN const char* chi_cstr(const chi_string* chi_str);
 
 /**
- * @brief Accesses the character at the specified index.
- * Note: It is the responsibility of the calling function to ensure that the `idx` parameter is valid.
- * 
- * @param chi_str The `chi_string` from which the character will be accessed.
- * @param idx The 0-based index of the character.
- * @return Returns the address of the character at the specified index; if the index is invalid, undefined behavior may occur.
-
+ * @brief Returns a pointer to the character at the given index in the string.
+ *
+ * This function provides access to a character in the `chi_string` at the specified index.
+ * The index must be within the valid range of the string (i.e., less than its size).
+ *
+ * @param chi_str Pointer to the `chi_string` from which the character will be accessed.
+ * @param idx The index of the character to retrieve.
+ * @return Pointer to the character at the given index.
  */
 CHI_API char* chi_at(chi_string* chi_str, size_t idx);
 
 /**
- * @brief Returns the address of the character at the beginning of the `chi_string`.
- * Note: If the `chi_string` is empty, the returned address may be invalid.
- * 
- * @param chi_str The `chi_string` whose beginning is to be returned.
- * @return Returns the address of the character at the beginning of the `chi_string`.
+ * @brief Returns a const pointer to the character at the given index in the string.
+ *
+ * This function provides read-only access to a character in the `chi_string` at the specified index.
+ * The index must be within the valid range of the string.
+ *
+ * @param chi_str Const pointer to the `chi_string` from which the character will be accessed.
+ * @param idx The index of the character to retrieve.
+ * @return Const pointer to the character at the given index.
+ */
+CHI_API const char* chi_cat(const chi_string* chi_str, size_t idx);
+
+/**
+ * @brief Returns a pointer to the first character in the string.
+ *
+ * This function provides access to the first character of the `chi_string`.
+ * The string must not be `NULL` and must be mutable.
+ *
+ * @param chi_str Pointer to the `chi_string`.
+ * @return Pointer to the first character of the string.
  */
 CHI_API char* chi_begin(chi_string* chi_str);
 
 /**
- * @brief Returns the address of the character at the beginning of the `chi_string`.
- * Note: If the `chi_string` is empty, the returned address may be invalid.
- * 
- * @param chi_str The `chi_string` whose beginning is to be returned.
- * @return Returns the address of the character at the beginning of the `chi_string`.
+ * @brief Returns a const pointer to the first character in the string.
+ *
+ * This function provides read-only access to the first character of the `chi_string`.
+ * The string must not be `NULL`.
+ *
+ * @param chi_str Const pointer to the `chi_string`.
+ * @return Const pointer to the first character of the string.
+ */
+CHI_API const char* chi_cbegin(const chi_string* chi_str);
+
+/**
+ * @brief Returns a pointer to the end of the string (past the last character).
+ *
+ * This function provides access to the end of the `chi_string`, which is one position
+ * past the last valid character. The string must not be `NULL` and must be mutable.
+ *
+ * @param chi_str Pointer to the `chi_string`.
+ * @return Pointer to the end of the string.
  */
 CHI_API char* chi_end(chi_string* chi_str);
+
+/**
+ * @brief Returns a const pointer to the end of the string (past the last character).
+ *
+ * This function provides read-only access to the end of the `chi_string`,
+ * which is one position past the last valid character.
+ *
+ * @param chi_str Const pointer to the `chi_string`.
+ * @return Const pointer to the end of the string.
+ */
+CHI_API const char* chi_cend(const chi_string* chi_str);
 
 /**
  * @brief Appends a character array to a chi_string instance.
@@ -652,6 +748,84 @@ CHI_API chi_string* chi_erase(chi_string* chi_str, size_t begin, size_t end);
 CHI_API chi_string* chi_erase_from(chi_string* chi_str, size_t offset);
 
 /**
+<<<<<<< HEAD
+ * @brief Sets a chi_string as constant and assigns a key to it.
+ *
+ * This function marks the given `chi_string` as constant by setting the `is_const` flag to true
+ * and assigning the provided key to the string. If the string is already marked as constant,
+ * the operation fails.
+ *
+ * @param chi_str The chi_string to be marked as constant.
+ * @param key The key to assign to the chi_string for constancy control.
+ * @return true if the operation was successful (the string was not already constant).
+ * @return false if the string was already marked as constant.
+ */
+CHI_API bool chi_add_const(chi_string* chi_str, unsigned int key);
+
+/**
+ * @brief Removes the constant state from a chi_string if the correct key is provided.
+ *
+ * This function unmarks a chi_string as constant only if the provided key matches the
+ * currently assigned `const_key`. If the keys match, the `is_const` flag is set to false.
+ *
+ * @param chi_str The chi_string to be unmarked as constant.
+ * @param key The key to validate for removing the constant state.
+ * @return true if the constant state was successfully removed.
+ * @return false if the string was not constant or if the key did not match.
+ */
+CHI_API bool chi_remove_const(chi_string* chi_str, unsigned int key);
+
+/**
+ * @brief Checks if a chi_string is marked as constant.
+ *
+ * This function returns the constant status of the given `chi_string`.
+ *
+ * @param chi_str The chi_string to check.
+ * @return true if the chi_string is marked as constant.
+ * @return false if the chi_string is not marked as constant.
+=======
+ * @brief Sets the constant state of a chi_string.
+ *
+ * This function modifies the constant state of the given `chi_string`.
+ * If the `state` is set to true, the string is considered constant, and its contents
+ * should not be modified.
+ *
+ * @param chi_str Pointer to the `chi_string` whose constant state will be set.
+ * @param state Boolean value indicating whether the string is constant (`true`) or not (`false`).
+ */
+CHI_API void chi_set_constant_state(chi_string* chi_str, bool state);
+
+/**
+ * @brief Checks if a chi_string is in a constant state.
+ *
+ * This function returns whether the given `chi_string` is marked as constant.
+ * A constant string means its contents are not supposed to be modified.
+ *
+ * @param chi_str Const pointer to the `chi_string` to check.
+ * @return Boolean value indicating if the string is constant (`true`) or not (`false`).
+>>>>>>> 3332771ca14c7a38b3862e646ddd15e61de88c2a
+ */
+CHI_API bool chi_is_const(const chi_string* chi_str);
+
+/**
+<<<<<<< HEAD
+ * @brief Resets the constancy key of a chi_string if the correct current key is provided.
+ *
+ * This function changes the `const_key` of a chi_string to a new key only if the provided
+ * `old_key` matches the currently assigned key. If the string is not marked as constant,
+ * or if the old key does not match, the operation fails.
+ *
+ * @param chi_str The chi_string whose constant key will be reset.
+ * @param old_key The current key to validate before resetting.
+ * @param new_key The new key to assign if validation is successful.
+ * @return true if the constant key was successfully updated.
+ * @return false if the string was not constant or the old key did not match.
+ */
+CHI_API bool chi_reset_const_key(chi_string* chi_str, unsigned int old_key, unsigned int new_key);
+
+/**
+=======
+>>>>>>> 3332771ca14c7a38b3862e646ddd15e61de88c2a
  * @brief Retrieves the size of a chi_string instance.
  * Note: This function using assertion
  * 
@@ -678,22 +852,28 @@ CHI_API CHI_CHECK_RETURN size_t chi_length(const chi_string* chi_str);
 CHI_API CHI_CHECK_RETURN size_t chi_capacity(const chi_string* chi_str);
 
 /**
- * @brief Retrieves the first character of the `chi_string`.
- * Note: If the `chi_string` is empty, the behavior is undefined. Make sure to check if the string is not empty using `chi_is_empty` before calling this function.
- * 
- * @param chi_str The `chi_string` instance to access.
- * @return Returns the address of the character at the front of the `chi_string`.
+ * @brief Returns the first character of the chi_string.
+ *
+ * This function retrieves the first character from the provided `chi_string`.
+ * It asserts that the string is not empty before accessing the first character.
+ *
+ * @param chi_str The chi_string from which to retrieve the first character.
+ * @return The first character of the chi_string.
+ * @note If the chi_string is empty, this function triggers an assertion failure.
  */
-CHI_API CHI_CHECK_RETURN char* chi_front(const chi_string* chi_str);
+CHI_API CHI_CHECK_RETURN char chi_front(const chi_string* chi_str);
 
 /**
- * @brief Retrieves the last character of the `chi_string`.
- * Note: If the `chi_string` is empty, the behavior is undefined. Make sure to check if the string is not empty using `chi_is_empty` before calling this function.
- * 
- * @param chi_str The `chi_string` instance to access.
- * @return Returns the address of the character at the back of the `chi_string`.
+ * @brief Returns the last character of the chi_string.
+ *
+ * This function retrieves the last character from the provided `chi_string`.
+ * It asserts that the string is not empty before accessing the last character.
+ *
+ * @param chi_str The chi_string from which to retrieve the last character.
+ * @return The last character of the chi_string.
+ * @note If the chi_string is empty, this function triggers an assertion failure.
  */
-CHI_API CHI_CHECK_RETURN char* chi_back(const chi_string* chi_str);
+CHI_API CHI_CHECK_RETURN char chi_back(const chi_string* chi_str);
 
 /**
  * @brief Compares the `chi_string` to a null-terminated C string for equality.
