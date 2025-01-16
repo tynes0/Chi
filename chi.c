@@ -1072,12 +1072,6 @@ CHI_API bool chi_remove_const(chi_string* chi_str, unsigned int key)
     return false;
 }
 
-CHI_API void chi_set_constant_state(chi_string* chi_str, bool state)
-{
-    chi_str_assert(chi_str);
-    chi_str->is_const = state;
-}
-
 CHI_API bool chi_is_const(const chi_string* chi_str)
 {
     chi_str_assert(chi_str);
