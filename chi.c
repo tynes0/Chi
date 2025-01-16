@@ -1,3 +1,4 @@
+#pragma once
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "chi.h"
@@ -75,8 +76,8 @@ struct _chi_string
     unsigned int const_key;
 };
 
-static const chi_string s_chi_snull    = { .data = NULL, .size = 0, .capacity = 0, .is_const = false };
-static const chi_string* chi_snull     = &s_chi_snull;
+static const chi_string s_chi_snull = { .data = NULL, .size = 0, .capacity = 0, .is_const = false };
+static const chi_string* chi_snull = &s_chi_snull;
 
 typedef struct
 {
@@ -121,7 +122,7 @@ static void _add_ptr_to_list(pointer_list* ptr_list, void* ptr)
         return;
     if (ptr_list->data == NULL)
     {
-        ptr_list->data = malloc(sizeof(void*) * minimum_list_capacity);
+        ptr_list->data = (void**)malloc(sizeof(void*) * minimum_list_capacity);
         chi_assert(ptr_list->data, "Chi initialize failed!");
         ptr_list->count = 0;
         ptr_list->capacity = minimum_list_capacity;
@@ -129,7 +130,7 @@ static void _add_ptr_to_list(pointer_list* ptr_list, void* ptr)
     if (ptr_list->count == ptr_list->capacity)
     {
         size_t new_cap = _chi_calculate_capacity(ptr_list->capacity, ptr_list->capacity + 1);
-        void** temp = malloc(sizeof(void*) * new_cap);
+        void** temp = (void**)malloc(sizeof(void*) * new_cap);
         chi_assert(temp, "Allocation error!");
         memcpy(temp, ptr_list->data, sizeof(void*) * ptr_list->count);
         free(ptr_list->data);
@@ -250,7 +251,7 @@ static chi_string* _chi_erase_data(chi_string* chi_str, size_t begin, size_t end
     {
         zero_memory(chi_str->data, chi_str->size);
         chi_str->size = 0;
-        return chi_str; 
+        return chi_str;
     }
     memmove(chi_str->data + begin, chi_str->data + end, chi_str->size - end);
     chi_str->size -= removed_part_len;
@@ -523,8 +524,8 @@ static bool _chi_equal_data_ignorecase(const char* lhs, const char* rhs, size_t 
     char left, right;
     for (size_t i = 0; i < ls; i++)
     {
-        left    = 'A' <= lhs[i] && lhs[i] <= 'Z' ? lhs[i] + 32 : lhs[i];
-        right   = 'A' <= rhs[i] && rhs[i] <= 'Z' ? rhs[i] + 32 : rhs[i];
+        left = 'A' <= lhs[i] && lhs[i] <= 'Z' ? lhs[i] + 32 : lhs[i];
+        right = 'A' <= rhs[i] && rhs[i] <= 'Z' ? rhs[i] + 32 : rhs[i];
         equal_data_check(left, right);
     }
     return true;
@@ -619,7 +620,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_with_capacity(size_t capacity)
     chi_string* result = alloc_a_chi_str();
     alloc_assert(result);
     push_chi(result);
-    result->data = NULL; 
+    result->data = NULL;
     result->size = 0;
     result->is_const = false;
     if (capacity == 0)
@@ -758,7 +759,7 @@ void chi_end_scope()
     chi_assert(s_string_list_array.count > 0 && s_other_pointer_list_array.count > 0, "chi_end_scope() called on empty stack!");
     s_string_list_array.count--;
     for (size_t i = 0; i < s_string_list_array.pointer_lists[s_string_list_array.count].count; ++i)
-        chi_free(s_string_list_array.pointer_lists[s_string_list_array.count].data[i]);
+        chi_free((chi_string*)s_string_list_array.pointer_lists[s_string_list_array.count].data[i]);
     s_string_list_array.pointer_lists[s_string_list_array.count].count = 0;
 
     s_other_pointer_list_array.count--;
@@ -773,7 +774,7 @@ void chi_end_scope()
 CHI_API void chi_cleanup()
 {
     for (size_t i = 0; i < s_string_list.count; ++i)
-        chi_free(s_string_list.data[i]);
+        chi_free((chi_string*)s_string_list.data[i]);
     s_string_list.count = 0;
     zero_memory(s_string_list_array.pointer_lists, s_string_list_array.count);
     s_string_list_array.count = 0;
@@ -945,14 +946,12 @@ CHI_API char* chi_begin(chi_string* chi_str)
     chi_str_assert(chi_str);
     chi_const_str_assert(chi_str);
     return chi_str->data;
-    return chi_get(chi_str);
 }
 
 CHI_API const char* chi_cbegin(const chi_string* chi_str)
 {
     chi_str_assert(chi_str);
     return chi_str->data;
-    return chi_get(chi_str);
 }
 
 CHI_API char* chi_end(chi_string* chi_str)
@@ -1312,7 +1311,7 @@ CHI_API chi_string* chi_trim_left(chi_string* chi_str)
     CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     size_t counter = 0;
-    while (isspace(chi_str->data[counter])) 
+    while (isspace(chi_str->data[counter]))
         counter++;
     if (counter == chi_str->size)
     {
@@ -1330,7 +1329,7 @@ CHI_API chi_string* chi_trim_right(chi_string* chi_str)
     CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     size_t idx = chi_str->size - 1;
-    while (isspace(chi_str->data[idx])) 
+    while (isspace(chi_str->data[idx]))
         idx--;
     if (idx == 0)
     {
@@ -1557,7 +1556,7 @@ CHI_API chi_string* chi_to_upper_ip(chi_string* chi_str, size_t begin, size_t en
     CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
-    
+
     for (size_t i = begin; i < end; ++i)
         if (chi_str->data[i] >= 97 && chi_str->data[i] <= 122)
             chi_str->data[i] -= 32;
@@ -1668,7 +1667,7 @@ CHI_API CHI_CHECK_RETURN size_t chi_count_if_ip(const chi_string* chi_str, size_
     chi_str_assert(chi_str);
     data_assert(chi_str->data);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
-    
+
     size_t counter = 0;
 
     for (size_t i = begin; i < end; ++i)
@@ -1765,7 +1764,7 @@ CHI_API chi_string* chi_reverse_ip(chi_string* chi_str, size_t begin, size_t end
     CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
-    
+
     for (size_t i = 0; i < (end - begin) / 2; ++i)
         _swap_(char, chi_str->data[begin + i], chi_str->data[end - i - 1]);
 
@@ -1910,7 +1909,7 @@ CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str)
 }
 
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data)
-{      
+{
     CHECK_NULL2(data, CHI_SVNULL);
     chi_string_view view = { .data = data, .size = strlen(data) };
     return view;
