@@ -776,26 +776,6 @@ CHI_API bool chi_add_const(chi_string* chi_str, unsigned int key);
 CHI_API bool chi_remove_const(chi_string* chi_str, unsigned int key);
 
 /**
- * @brief Checks if a chi_string is marked as constant.
- *
- * This function returns the constant status of the given `chi_string`.
- *
- * @param chi_str The chi_string to check.
- * @return true if the chi_string is marked as constant.
- * @return false if the chi_string is not marked as constant.
-=======
- * @brief Sets the constant state of a chi_string.
- *
- * This function modifies the constant state of the given `chi_string`.
- * If the `state` is set to true, the string is considered constant, and its contents
- * should not be modified.
- *
- * @param chi_str Pointer to the `chi_string` whose constant state will be set.
- * @param state Boolean value indicating whether the string is constant (`true`) or not (`false`).
- */
-CHI_API void chi_set_constant_state(chi_string* chi_str, bool state);
-
-/**
  * @brief Checks if a chi_string is in a constant state.
  *
  * This function returns whether the given `chi_string` is marked as constant.
@@ -803,12 +783,10 @@ CHI_API void chi_set_constant_state(chi_string* chi_str, bool state);
  *
  * @param chi_str Const pointer to the `chi_string` to check.
  * @return Boolean value indicating if the string is constant (`true`) or not (`false`).
->>>>>>> 3332771ca14c7a38b3862e646ddd15e61de88c2a
  */
 CHI_API bool chi_is_const(const chi_string* chi_str);
 
 /**
-<<<<<<< HEAD
  * @brief Resets the constancy key of a chi_string if the correct current key is provided.
  *
  * This function changes the `const_key` of a chi_string to a new key only if the provided
