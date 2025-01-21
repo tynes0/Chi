@@ -68,3 +68,5 @@
 * Update 2.5.0: chi_snull fixed.
 * Update 2.5.1: All replace functions fixed.
 * Update 2.5.2: chi_count_... implementations has changed. This allows chi_sv_count_... functions to use the same implementation.
+* Update 2.5.3: FIX TYPO.
+* Update 2.5.4: Added missing doxygen format function description comments.

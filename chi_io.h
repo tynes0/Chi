@@ -18,7 +18,7 @@ _CHI_HEADER_BEGIN
  * @param n The maximum number of characters to read.
  * @return true or false indicating success or failure.
  */
-	CHI_API bool chi_read_n(chi_string* chi_str, FILE* file, int n);
+CHI_API bool chi_read_n(chi_string* chi_str, FILE* file, int n);
 
 /**
  * @brief Reads a line from the given file into the chi_string.

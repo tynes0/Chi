@@ -240,7 +240,11 @@ CHI_API void chi_enable_check_n(bool enable);
  */
 CHI_API void chi_ignore_spaces(bool ignore);
 
-//TODO
+/**
+ * @brief Sets the count of the next items without applying any formatting.
+ *
+ * @param count The number of items to set.
+ */
 CHI_API void chi_set_next_items_no_format(uint32_t count);
 
 /**
@@ -1010,8 +1014,16 @@ CHI_API chi_string* chi_trim_right(chi_string* chi_str);
  */
 CHI_API chi_string* chi_trim(chi_string* chi_str);
 
-// todo
-CHI_API chi_string* chi_replace_ip(chi_string* chi_str, size_t begin, size_t end, const char* new_value); // TODO
+/**
+ * @brief Replaces a portion of the `chi_string` with a new value between the specified range.
+ *
+ * @param chi_str The `chi_string` instance to modify.
+ * @param begin The starting index of the range to replace.
+ * @param end The ending index of the range to replace (exclusive).
+ * @param new_value The new string value to insert.
+ * @return Returns the modified `chi_string` instance.
+ */
+CHI_API chi_string* chi_replace_ip(chi_string* chi_str, size_t begin, size_t end, const char* new_value);
 
 /**
  * @brief Replaces all occurrences of a character with another character in the `chi_string`.
@@ -1831,6 +1843,12 @@ CHI_API CHI_CHECK_RETURN bool chi_isspace_ip(const chi_string* chi_str, size_t b
  */
 CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str);
 
+/**
+ * @brief Formats the `chi_string` using the specified format and arguments.
+ *
+ * @param chi_str The `chi_string` instance to format.
+ * @param ... The variadic arguments to use for formatting the string.
+ */
 CHI_API void chi_format(chi_string* chi_str, ...);
 
 /* CHI STRING END */
@@ -2296,68 +2314,308 @@ CHI_API CHI_CHECK_RETURN unsigned long long chi_sv_toull(chi_string_view sv);
  */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_hash(chi_string_view sv);
 
+/**
+ * @brief Counts the occurrences of a character within a specific range of a `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param ch The character to count.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns the count of the character occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_ip(chi_string_view sv, char ch, size_t begin, size_t end);
 
+/**
+ * @brief Counts the occurrences of a character in the entire `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param ch The character to count.
+ * @return Returns the count of the character occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count(chi_string_view sv, char ch);
 
+/**
+ * @brief Counts the occurrences of a C-string within a specific range of a `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param data The C-string to count occurrences of.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns the count of the C-string occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_s_ip(chi_string_view sv, const char* data, size_t begin, size_t end);
 
+/**
+ * @brief Counts the occurrences of a C-string in the entire `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param data The C-string to count occurrences of.
+ * @return Returns the count of the C-string occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_s(chi_string_view sv, const char* data);
 
+/**
+ * @brief Counts the occurrences of a `chi_string` within a specific range of a `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param data The `chi_string` to count occurrences of.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns the count of the `chi_string` occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_cs_ip(chi_string_view sv, const chi_string* data, size_t begin, size_t end);
 
+/**
+ * @brief Counts the occurrences of a `chi_string` in the entire `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param data The `chi_string` to count occurrences of.
+ * @return Returns the count of the `chi_string` occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_cs(chi_string_view sv, const chi_string* data);
 
+/**
+ * @brief Counts the occurrences of another `chi_string_view` within a specific range of a `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param data The `chi_string_view` to count occurrences of.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns the count of the `chi_string_view` occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_sv_ip(chi_string_view sv, chi_string_view data, size_t begin, size_t end);
 
+/**
+ * @brief Counts the occurrences of another `chi_string_view` in the entire `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param data The `chi_string_view` to count occurrences of.
+ * @return Returns the count of the `chi_string_view` occurrences as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_sv(chi_string_view sv, chi_string_view data);
 
+/**
+ * @brief Counts the number of characters in a specific range of a `chi_string_view` that satisfy a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns the count of characters satisfying the predicate as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_if_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
 
+/**
+ * @brief Counts the number of characters in the entire `chi_string_view` that satisfy a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to search.
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns the count of characters satisfying the predicate as a `size_t`.
+ */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_if(chi_string_view sv, bool(*pred)(char));
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` satisfy a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns `true` if all characters in the range satisfy the predicate, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_all_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` satisfy a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns `true` if all characters satisfy the predicate, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_all_of(chi_string_view sv, bool(*pred)(char));
 
+/**
+ * @brief Checks if any character in a specific range of a `chi_string_view` satisfies a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns `true` if any character in the range satisfies the predicate, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_any_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
 
+/**
+ * @brief Checks if any character in the entire `chi_string_view` satisfies a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns `true` if any character satisfies the predicate, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_any_of(chi_string_view sv, bool(*pred)(char));
 
+/**
+ * @brief Checks if no characters in a specific range of a `chi_string_view` satisfy a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns `true` if no characters in the range satisfy the predicate, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_none_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
 
+/**
+ * @brief Checks if no characters in the entire `chi_string_view` satisfy a given predicate.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param pred A pointer to a predicate function that evaluates each character.
+ * @return Returns `true` if no characters satisfy the predicate, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_none_of(chi_string_view sv, bool(*pred)(char));
 
+/**
+ * @brief Retrieves a sample character from a specific range of a `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to sample from.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns a character sampled from the specified range. If the range is empty or invalid, behavior is undefined.
+ */
 CHI_API CHI_CHECK_RETURN char chi_sv_sample_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Retrieves a sample character from the entire `chi_string_view`.
+ *
+ * @param sv The `chi_string_view` instance to sample from.
+ * @return Returns a character sampled from the `chi_string_view`. If the string view is empty, behavior is undefined.
+ */
 CHI_API CHI_CHECK_RETURN char chi_sv_sample(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are lowercase letters.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are lowercase, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_islower_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are lowercase letters.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are lowercase, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_islower(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are uppercase letters.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are uppercase, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isupper_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are uppercase letters.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are uppercase, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isupper(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are alphanumeric.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are alphanumeric, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isalnum_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are alphanumeric.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are alphanumeric, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isalnum(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are alphabetic.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are alphabetic, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isalpha_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are alphabetic.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are alphabetic, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isalpha(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are digits.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are digits, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isdigit_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are digits.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are digits, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isdigit(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are printable.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are printable, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isprintable_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are printable.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are printable, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isprintable(chi_string_view sv);
 
+/**
+ * @brief Checks if all characters in a specific range of a `chi_string_view` are whitespace.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @param begin The starting index of the range (inclusive).
+ * @param end The ending index of the range (exclusive).
+ * @return Returns `true` if all characters in the range are whitespace, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isspace_ip(chi_string_view sv, size_t begin, size_t end);
 
+/**
+ * @brief Checks if all characters in the entire `chi_string_view` are whitespace.
+ *
+ * @param sv The `chi_string_view` instance to evaluate.
+ * @return Returns `true` if all characters are whitespace, otherwise `false`.
+ */
 CHI_API CHI_CHECK_RETURN bool chi_sv_isspace(chi_string_view sv);
 
 /* CHI STRING VIEW END */
