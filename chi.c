@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <time.h>
 
 #define alloc_a_chi_str()                               ((chi_string*)malloc(sizeof(chi_string)))
@@ -16,7 +17,6 @@
 #define alloc_assert(block)                             chi_assert(block != NULL, "Allocation failed!")
 #define data_assert(block)                              chi_assert(block != NULL, "NULL data!")
 #define chi_str_assert(block)                           chi_assert(block != NULL, "NULL chi_string!")
-#define chi_const_str_assert(chi)                       chi_assert(!((chi)->is_const), "Const chi_string!")
 
 #define zero_memory(block, size)                        (memset(block, 0, size))
 #define copy_to_chi(chi, block)                         (memcpy((chi)->data, block, (chi)->size + 1))
@@ -30,15 +30,12 @@
 #define _swap_(type, left, right)                       do { type temp = left; left = right; right = temp; } while(0)
 #define _swap_ptr_(type, left, right)                   do { type temp = *left; *left = *right; *right = temp; } while(0)
 
-#define check_rand_seed()                               do { if (!s_rand_initialized) { _chi_rand_seed = (uint32_t)time(NULL); s_rand_initialized = true; } } while(0)
-#define secure_underflow(uval)                          do { if(uval == 0) { break; } } while(0)
+#define secure_underflow(uval)                          { if(uval == 0) { break; } }
 #define ignore_spaces_or_return(data, action)           do { if(s_ignore_space) { if(!isspace(data)) { action; } } else { action; } } while(0)
 
 #define CHECK_NULL(ptr)                                 do { if(ptr == NULL) { return NULL; } } while(0)
 #define CHECK_NULL2(ptr, retval)                        do { if(ptr == NULL) { return retval; } } while(0)
-#define CHECK_CONST(chi)                                do { if(chi->is_const) { return chi; } } while(0)
-#define CHECK_CONST2(chi, retval)                       do { if(chi->is_const) { return retval; } } while(0)
-#define CHECK_N(ptr, n)                                 do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0) // n should't be const!! 
+#define CHECK_N(ptr, n)                                 do { if(g_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0) // n should't be const!! 
 #define CHECK_BEGIN_AND_END(size, begin, end)           do { chi_assert(begin <= end && begin < size, "range is not verified!"); if(size < end) { end = size; } } while(0) // end shouldn't be const
 
 #define to_chi_str_impl(buffer_size, format, value)     do { chi_string* result = chi_create_empty(buffer_size); snprintf(result->data, result->size, format, value); return result; } while(0)
@@ -52,6 +49,7 @@
 #define equal_null_check(lhs, rhs, check)               do { if (check) { if (lhs == NULL) { if (rhs == NULL) { return true; } return false; } if (rhs == NULL) {return false; } } } while(0)
 #define equal_data_check(left_data, right_data)         do { if(left_data != right_data) { return false; } } while(0)
 
+#define vformat_from(from, chi_str)                     do { if(s_no_format_item_count) { s_no_format_item_count--; } else { va_list arg_list; va_start(arg_list, from); _chi_vformat(chi_str, arg_list); va_end(arg_list); } } while(0)
 
 /* hash constants */
 #if defined(_WIN64)
@@ -63,21 +61,21 @@ static const size_t prime = 16777619u;
 #endif // defined(_WIN64)
 /* hash constants */
 
-extern bool s_rand_initialized = false;
-extern bool s_check_n = false;
-extern bool s_ignore_space = false;
+extern bool g_check_n = false;
+
+static bool s_rand_initialized = false;
+static bool s_ignore_space = false;
+static uint32_t s_no_format_item_count = 0;
 
 struct _chi_string
 {
     char* data;
     size_t size;
     size_t capacity;
-    bool is_const;
-    unsigned int const_key;
 };
 
-static const chi_string s_chi_snull = { .data = NULL, .size = 0, .capacity = 0, .is_const = false };
-static const chi_string* chi_snull = &s_chi_snull;
+static const chi_string s_chi_snull = { .data = NULL, .size = 0, .capacity = 0 };
+const chi_string* chi_snull = &s_chi_snull;
 
 typedef struct
 {
@@ -172,7 +170,6 @@ static chi_string* _chi_create_base(size_t size)
     alloc_assert(result);
     push_chi(result);
     result->data = NULL;
-    result->is_const = false;
     if (size == 0)
     {
         result->size = result->capacity = 0;
@@ -186,7 +183,6 @@ static chi_string* _chi_create_base(size_t size)
 static chi_string* _chi_insert_data(chi_string* chi_str, size_t idx, const char* data, size_t data_length)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(data, chi_str);
     chi_assert(idx <= chi_str->size, "index is out of the range!");
 
@@ -222,7 +218,6 @@ static chi_string* _chi_insert_data(chi_string* chi_str, size_t idx, const char*
 static chi_string* _chi_append_data(chi_string* chi_str, const char* data, size_t data_length)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(data, chi_str);
     if (chi_str->data == NULL)
     {
@@ -243,7 +238,6 @@ static chi_string* _chi_append_data(chi_string* chi_str, const char* data, size_
 static chi_string* _chi_erase_data(chi_string* chi_str, size_t begin, size_t end)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
     size_t removed_part_len = end - begin;
@@ -261,7 +255,6 @@ static chi_string* _chi_erase_data(chi_string* chi_str, size_t begin, size_t end
 static chi_string* _chi_reset_data(chi_string* chi_str, const char* data, size_t size)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     if (data == NULL)
     {
         if (chi_str->data == NULL)
@@ -285,7 +278,6 @@ static chi_string* _chi_reset_data(chi_string* chi_str, const char* data, size_t
 static chi_string* _chi_fill_data(chi_string* chi_str, size_t offset, size_t length, char ch)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     if (chi_str->data == NULL || offset >= chi_str->size)
         return chi_str;
     if (offset + length > chi_str->size)
@@ -296,10 +288,9 @@ static chi_string* _chi_fill_data(chi_string* chi_str, size_t offset, size_t len
 
 _CHI_PRAGMA(warning(push))
 _CHI_PRAGMA(warning(disable : 6386)) // capacity is always larger than size!
-static chi_string* _chi_remove_data(chi_string* chi_str, const char* delim, size_t delim_len)
+static chi_string* _chi_remove_data(chi_string* chi_str, const char* delim, size_t delim_len) // make optimized version of this
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(delim, chi_str);
     chi_assert(delim_len > 0, "delimiter length must be greater than zero");
 
@@ -328,12 +319,12 @@ _CHI_PRAGMA(warning(pop))
 
 _CHI_PRAGMA(warning(push))
 _CHI_PRAGMA(warning(disable : 6386))
-static chi_string* _chi_replace_data(chi_string* chi_str, const char* old_value, size_t old_value_size, const char* new_value, size_t new_value_size)
+static chi_string* _chi_replace_data(chi_string* chi_str, size_t begin, size_t end, const char* old_value, size_t old_value_size, const char* new_value, size_t new_value_size)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(old_value, chi_str);
     CHECK_NULL2(new_value, chi_str);
+    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
     chi_assert(old_value_size > 0, "old_value length must be greater than zero");
 
     if (chi_str->data == NULL || chi_str->size == 0)
@@ -355,23 +346,29 @@ static chi_string* _chi_replace_data(chi_string* chi_str, const char* old_value,
         size_t new_capacity = _chi_calculate_capacity(chi_str->capacity, chi_str->size + (new_value_size - old_value_size));
         char* temp = alloc_str_ptr(new_capacity);
         alloc_assert(temp);
-        size_t idx = 0;
-        for (size_t i = 0; i <= chi_str->size - old_value_size; ++i)
+        size_t idx = begin;
+        if (begin > 0)
+            memcpy(temp, chi_str->data, begin - 0);
+        for (size_t i = begin; i <= end; ++i)
         {
             if (memcmp(chi_str->data + i, old_value, old_value_size) == 0)
             {
                 memcpy(temp + idx, new_value, new_value_size);
                 idx += new_value_size;
-                i += old_value_size - 1;
+                i += old_value_size;
             }
             else
+            {
                 temp[idx++] = chi_str->data[i];
+            }
         }
+        if (chi_str->size > end)
+            memcpy(temp + idx, chi_str->data + end, chi_str->size - end);
         free(chi_str->data);
-        chi_str->size = idx;
+        chi_str->size = idx + (chi_str->size - end);
         chi_str->capacity = new_capacity;
         chi_str->data = temp;
-        chi_str->data[idx] = 0;
+        chi_str->data[chi_str->size] = 0;
     }
 
     return chi_str;
@@ -461,17 +458,17 @@ static size_t _chi_find_first_last_of_not_of(const char* data, size_t len, size_
     return chi_npos;
 }
 
-static size_t _chi_count_data(const chi_string* chi_str, const char* data, size_t length, size_t begin, size_t end)
+static size_t _chi_count_data(const char* str, size_t size, const char* data, size_t length, size_t begin, size_t end)
 {
-    chi_str_assert(chi_str);
+    data_assert(str);
     data_assert(data);
-    CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    CHECK_BEGIN_AND_END(size, begin, end);
     size_t counter = 0;
     if (length > end - begin)
         return counter;
     for (size_t i = begin; i < end - length; ++i)
     {
-        if (memcmp(chi_str->data + i, data, length) == 0)
+        if (memcmp(str + i, data, length) == 0)
         {
             ++counter;
             i += length - 1;
@@ -487,7 +484,7 @@ static chi_string** _chi_split_data(const chi_string* chi_str, const char* delim
     chi_str_assert(chi_str);
     chi_assert(delim != NULL, "NULL delimeter!");
     chi_assert(size != NULL, "NULL size_t!");
-    *size = _chi_count_data(chi_str, delim, delim_length, 0, chi_str->size) + 1;
+    *size = _chi_count_data(chi_str->data, chi_str->size, delim, delim_length, 0, chi_str->size) + 1;
     chi_string** result = (chi_string**)malloc(sizeof(chi_string*) * (*size));
     alloc_assert(result);
     push_ptr(result);
@@ -543,8 +540,19 @@ static size_t _append_bytes(size_t val, const unsigned char* const first, const 
 
 static uint32_t _chi_rand_seed = 0;
 
+static void _chi_check_rand_seed()
+{
+    if (!s_rand_initialized) 
+    { 
+        _chi_rand_seed = (uint32_t)time(NULL); 
+        s_rand_initialized = true; 
+    }
+}
+
 static uint32_t _chi_random()
 {
+    _chi_check_rand_seed();
+
     _chi_rand_seed = (1664525 * _chi_rand_seed + 1013904223) & 0xFFFFFFFF;
     return _chi_rand_seed;
 }
@@ -552,6 +560,129 @@ static uint32_t _chi_random()
 static uint32_t _chi_random_in_range(uint32_t min, uint32_t max)
 {
     return (_chi_random() % (max - min)) + min;
+}
+
+static void _chi_vformat(chi_string* chi_str, va_list arg_list)
+{
+    if (arg_list == NULL)
+        return;
+    chi_begin_scope();
+    size_t index = 0, scope_end = 0;
+
+    while (index < chi_str->size)
+    {
+        index = chi_find_c(chi_str, scope_end, '{');
+        if (index == chi_npos || index == chi_str->size - 1)
+            return;
+        if (chi_str->data[index] + 1 == '{')
+        {
+            index += 1;
+            continue;
+        }
+
+        scope_end = chi_find_c(chi_str, index, '}');
+        if (scope_end == chi_npos)
+            return;
+
+        chi_string_view view = chi_sv_n(chi_str->data + index + 1, scope_end - index + -1);
+        if (view.size == 0)
+            continue;
+
+        if (chi_sv_equal_s(view, "c"))
+        {
+            char v = va_arg(arg_list, char);
+            chi_replace_ip(chi_str, index, scope_end + 1, &v);
+        }
+        else if (chi_sv_equal_s(view, "i"))
+        {
+            int v = va_arg(arg_list, int);
+            chi_string* str = chi_to_string_i(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "f"))
+        {
+            float v = va_arg(arg_list, float);
+            chi_string* str = chi_to_string_f(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "d"))
+        {
+            double v = va_arg(arg_list, double);
+            chi_string* str = chi_to_string_d(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "l"))
+        {
+            long v = va_arg(arg_list, long);
+            chi_string* str = chi_to_string_l(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "ll"))
+        {
+            long long v = va_arg(arg_list, long long);
+            chi_string* str = chi_to_string_ll(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "uc"))
+        {
+            unsigned char v = va_arg(arg_list, unsigned char);
+            chi_string* str = chi_to_string_ul((unsigned long)v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "u"))
+        {
+            unsigned v = va_arg(arg_list, unsigned);
+            chi_string* str = chi_to_string_ul((unsigned long)v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "ul"))
+        {
+            unsigned long v = va_arg(arg_list, unsigned long);
+            chi_string* str = chi_to_string_ul(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "ull"))
+        {
+            unsigned long long v = va_arg(arg_list, unsigned long long);
+            chi_string* str = chi_to_string_ull(v);
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "sz"))
+        {
+            size_t v = va_arg(arg_list, size_t);
+#ifdef _WIN64
+            chi_string* str = chi_to_string_ull(v);
+#else // _WIN64
+            chi_string* str = chi_to_string_ul(v);
+#endif // _WIN64
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "p"))
+        {
+            intptr_t* v = va_arg(arg_list, intptr_t*);
+            chi_string* str = chi_to_string_ull((unsigned long long)v); // think about that
+            chi_replace_ip(chi_str, index, scope_end + 1, str->data);
+        }
+        else if (chi_sv_equal_s(view, "s"))
+        {
+            const char* v = va_arg(arg_list, const char*);
+            chi_replace_ip(chi_str, index, scope_end + 1, v);
+        }
+        else if (chi_sv_equal_s(view, "cs"))
+        {
+            chi_string* v = va_arg(arg_list, chi_string*);
+            if (v == NULL)
+                goto end;
+            chi_replace_ip(chi_str, index, scope_end + 1, v->data);
+        }
+        else if (chi_sv_equal_s(view, "csv"))
+        {
+            chi_string_view v = va_arg(arg_list, chi_string_view);
+            chi_replace_ip(chi_str, index, scope_end + 1, v.data);
+        }
+    end:;
+    }
+    chi_end_scope();
 }
 
 /* UTILS END */
@@ -572,7 +703,17 @@ size_t CHI_CHECK_RETURN chi_hash_s(const char* str)
 
 void chi_enable_check_n(bool enable)
 {
-    s_check_n = enable;
+    g_check_n = enable;
+}
+
+CHI_API void chi_ignore_spaces(bool ignore)
+{
+    s_ignore_space = ignore;
+}
+
+CHI_API void chi_set_next_items_no_format(uint32_t count)
+{
+    s_no_format_item_count = count;
 }
 
 CHI_API void chi_ignore_freeing(void* block)
@@ -589,16 +730,17 @@ CHI_API void chi_add_to_the_free_list(void* block, bool is_chi)
         push_ptr(block);
 }
 
-CHI_API CHI_CHECK_RETURN chi_string* chi_create(const char* data)
+CHI_API CHI_CHECK_RETURN chi_string* chi_create(const char* data, ...)
 {
     CHECK_NULL2(data, _chi_create_base(0));
     size_t temp_size = strlen(data);
     chi_string* result = _chi_create_base(temp_size);
     copy_to_chi(result, data);
+    vformat_from(data, result);
     return result;
 }
 
-CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size)
+CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size, ...)
 {
     CHECK_NULL2(data, _chi_create_base(0));
     if (size == 0)
@@ -607,6 +749,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size)
     chi_string* result = _chi_create_base(size);
     copy_to_chi(result, data);
     result->data[result->size] = 0;
+    vformat_from(size, result);
     return result;
 }
 
@@ -622,7 +765,6 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_with_capacity(size_t capacity)
     push_chi(result);
     result->data = NULL;
     result->size = 0;
-    result->is_const = false;
     if (capacity == 0)
     {
         result->capacity = 0;
@@ -646,53 +788,28 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_and_fill(char ch, size_t size)
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_from_chi_s(const chi_string* chi_str)
 {
     CHECK_NULL(chi_str);
-    return chi_create(chi_str->data);
+    return chi_create_n(chi_str->data, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_from_chi_sv(const chi_string_view chi_sv)
 {
-    return chi_create(chi_sv.data);
+    return chi_create_n(chi_sv.data, chi_sv.size);
 }
 
-CHI_CHECK_RETURN chi_string* chi_make_chi(char* data)
-{
-    data_assert(data);
-    chi_string* result = alloc_a_chi_str();
-    alloc_assert(result);
-    result->data = data;
-    result->is_const = false;
-    result->size = result->capacity = strlen(data);
-    push_chi(result);
-    return result;
-}
-
-CHI_CHECK_RETURN chi_string* chi_make_chi_n(char* data, size_t n)
+CHI_CHECK_RETURN chi_string* chi_make_chi(char* data, size_t n, ...)
 {
     data_assert(data);
     chi_string* result = alloc_a_chi_str();
     alloc_assert(result);
     result->data = data;
     result->size = result->capacity = n;
-    result->is_const = false;
     result->data[n] = 0;
     push_chi(result);
+    vformat_from(n, result);
     return result;
 }
 
-CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t capacity)
-{
-    data_assert(data);
-    chi_string* result = alloc_a_chi_str();
-    alloc_assert(result);
-    result->data = data;
-    result->size = strlen(data);
-    result->is_const = false;
-    result->capacity = capacity;
-    push_chi(result);
-    return result;
-}
-
-CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capacity)
+CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t n, size_t capacity, ...)
 {
     data_assert(data);
     chi_string* result = alloc_a_chi_str();
@@ -701,8 +818,8 @@ CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capac
     result->size = n;
     result->data[n] = 0;
     result->capacity = capacity;
-    result->is_const = false;
     push_chi(result);
+    vformat_from(capacity, result);
     return result;
 }
 
@@ -813,7 +930,6 @@ CHI_API void chi_str_array_free(chi_string** chi_str_array, size_t size)
 CHI_API void chi_clear(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
-    chi_const_str_assert(chi_str);
     if (chi_str->data == NULL)
         return;
     zero_memory(chi_str->data, chi_str->size);
@@ -823,7 +939,6 @@ CHI_API void chi_clear(chi_string* chi_str)
 char* chi_release(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
-    chi_const_str_assert(chi_str);
     char* data = chi_str->data;
     chi_str->data = NULL;
     chi_free(chi_str);
@@ -833,7 +948,6 @@ char* chi_release(chi_string* chi_str)
 CHI_API void chi_resize(chi_string* chi_str, size_t new_size)
 {
     chi_str_assert(chi_str);
-    CHECK_CONST2(chi_str, );
     if (new_size == 0)
     {
         chi_clear(chi_str);
@@ -854,7 +968,6 @@ CHI_API void chi_resize(chi_string* chi_str, size_t new_size)
 CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap)
 {
     chi_str_assert(chi_str);
-    CHECK_CONST2(chi_str, );
 
     if (chi_str->data == NULL)
     {
@@ -878,7 +991,6 @@ CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap)
 CHI_API void chi_shrink_to_fit(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
-    CHECK_CONST2(chi_str, );
     data_assert(chi_str->data);
     if (chi_str->size == chi_str->capacity)
         return;
@@ -916,7 +1028,6 @@ chi_string* chi_reset_from_sv(chi_string* chi_str, const chi_string_view sv)
 CHI_CHECK_RETURN char* chi_get(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
-    chi_const_str_assert(chi_str);
     return chi_str->data;
 }
 
@@ -929,7 +1040,6 @@ CHI_API CHI_CHECK_RETURN const char* chi_cstr(const chi_string* chi_str)
 CHI_API char* chi_at(chi_string* chi_str, size_t idx)
 {
     chi_str_assert(chi_str);
-    chi_const_str_assert(chi_str);
     chi_assert(idx < chi_str->size, "Index subscript out of the range!");
     return (chi_str->data + idx);
 }
@@ -944,7 +1054,6 @@ CHI_API const char* chi_cat(const chi_string* chi_str, size_t idx)
 CHI_API char* chi_begin(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
-    chi_const_str_assert(chi_str);
     return chi_str->data;
 }
 
@@ -957,7 +1066,6 @@ CHI_API const char* chi_cbegin(const chi_string* chi_str)
 CHI_API char* chi_end(chi_string* chi_str)
 {
     chi_str_assert(chi_str);
-    chi_const_str_assert(chi_str);
     return chi_str->data + chi_str->size;
 }
 
@@ -1003,7 +1111,6 @@ chi_string* chi_push_back(chi_string* chi_str, char data)
 chi_string* chi_pop_back(chi_string* chi_str)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     chi_assert(!chi_is_empty(chi_str), "chi_pop_back() call with empty chi_string!");
     chi_str->data[--chi_str->size] = 0;
     return chi_str;
@@ -1046,48 +1153,6 @@ chi_string* chi_erase(chi_string* chi_str, size_t begin, size_t end)
 chi_string* chi_erase_from(chi_string* chi_str, size_t offset)
 {
     return _chi_erase_data(chi_str, offset, chi_str->size);
-}
-
-CHI_API bool chi_add_const(chi_string* chi_str, unsigned int key)
-{
-    chi_str_assert(chi_str);
-    if (chi_str->is_const)
-        return false;
-    chi_str->is_const = true;
-    chi_str->const_key = key;
-    return true;
-}
-
-CHI_API bool chi_remove_const(chi_string* chi_str, unsigned int key)
-{
-    chi_str_assert(chi_str);
-    if (!chi_str->is_const)
-        return false;
-    if (chi_str->const_key == key)
-    {
-        chi_str->is_const = false;
-        return true;
-    }
-    return false;
-}
-
-CHI_API bool chi_is_const(const chi_string* chi_str)
-{
-    chi_str_assert(chi_str);
-    return chi_str->is_const;
-}
-
-CHI_API bool chi_reset_const_key(chi_string* chi_str, unsigned int old_key, unsigned int new_key)
-{
-    chi_str_assert(chi_str);
-    if (!chi_str->is_const)
-        return false;
-    if (chi_str->const_key == old_key)
-    {
-        chi_str->const_key = new_key;
-        return true;
-    }
-    return false;
 }
 
 CHI_CHECK_RETURN size_t chi_size(const chi_string* chi_str)
@@ -1196,7 +1261,6 @@ CHI_API chi_string* chi_copy(chi_string* chi_str, const chi_string* src_cs)
     if (src_cs == NULL)
     {
         CHECK_NULL(chi_str);
-        CHECK_CONST(chi_str);
         chi_free(chi_str);
         return NULL;
     }
@@ -1254,7 +1318,6 @@ chi_string* chi_remove_repated(chi_string* chi_str)
 #pragma warning(push)
 #pragma warning(disable : 6386) // capacity is always larger than size!
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     if (chi_str->data == NULL || chi_str->size == 0)
         return chi_str;
     char* temp = alloc_str_ptr(chi_str->capacity);
@@ -1308,7 +1371,6 @@ chi_string* chi_remove_sv(chi_string* chi_str, chi_string_view delim)
 CHI_API chi_string* chi_trim_left(chi_string* chi_str)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     size_t counter = 0;
     while (isspace(chi_str->data[counter]))
@@ -1326,7 +1388,6 @@ CHI_API chi_string* chi_trim_left(chi_string* chi_str)
 CHI_API chi_string* chi_trim_right(chi_string* chi_str)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     size_t idx = chi_str->size - 1;
     while (isspace(chi_str->data[idx]))
@@ -1344,26 +1405,36 @@ CHI_API chi_string* chi_trim_right(chi_string* chi_str)
 CHI_API chi_string* chi_trim(chi_string* chi_str)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     return chi_trim_left(chi_trim_right(chi_str));
 }
 
+CHI_API chi_string* chi_replace_ip(chi_string* chi_str, size_t begin, size_t end, const char* new_value)
+{
+    CHECK_NULL2(new_value, chi_str);
+    //CHECK_BEGIN_AND_END(chi_str->size, begin, end);
+    chi_string_view view = chi_sv_n(chi_str->data + begin, end - begin);
+    return _chi_replace_data(chi_str, begin, end, view.data, view.size, new_value, strlen(new_value));
+}
+
 chi_string* chi_replace_c(chi_string* chi_str, char old_value, char new_value)
 {
-    return _chi_replace_data(chi_str, &old_value, 1, &new_value, 1);
+    chi_str_assert(chi_str);
+    return _chi_replace_data(chi_str, 0, chi_str->size, &old_value, 1, &new_value, 1);
 }
 
 chi_string* chi_replace(chi_string* chi_str, const char* old_value, const char* new_value)
 {
+    chi_str_assert(chi_str);
     CHECK_NULL2(old_value, chi_str);
     CHECK_NULL2(new_value, chi_str);
-    return _chi_replace_data(chi_str, old_value, strlen(old_value), new_value, strlen(new_value));
+    return _chi_replace_data(chi_str, 0, chi_str->size, old_value, strlen(old_value), new_value, strlen(new_value));
 }
 
 chi_string* chi_replace_sv(chi_string* chi_str, chi_string_view old_value, chi_string_view new_value)
 {
-    return _chi_replace_data(chi_str, old_value.data, old_value.size, new_value.data, new_value.size);
+    chi_str_assert(chi_str);
+    return _chi_replace_data(chi_str, 0, chi_str->size, old_value.data, old_value.size, new_value.data, new_value.size);
 }
 
 CHI_CHECK_RETURN size_t chi_find_c(const chi_string* chi_str, size_t offset, char delim)
@@ -1519,8 +1590,6 @@ CHI_API void chi_swap(chi_string* lhs, chi_string* rhs)
 {
     chi_str_assert(lhs);
     chi_str_assert(rhs);
-    chi_const_str_assert(lhs);
-    chi_const_str_assert(rhs);
     _swap_ptr_(chi_string, lhs, rhs);
 }
 
@@ -1534,7 +1603,6 @@ CHI_API CHI_CHECK_RETURN size_t chi_hash(const chi_string* chi_str)
 CHI_API chi_string* chi_for_each_ip(chi_string* chi_str, size_t begin, size_t end, void(*pred)(char*))
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
@@ -1553,7 +1621,6 @@ CHI_API chi_string* chi_for_each(chi_string* chi_str, void(*pred)(char*))
 CHI_API chi_string* chi_to_upper_ip(chi_string* chi_str, size_t begin, size_t end)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
@@ -1573,7 +1640,6 @@ CHI_API chi_string* chi_to_upper(chi_string* chi_str)
 CHI_API chi_string* chi_to_lower_ip(chi_string* chi_str, size_t begin, size_t end)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
@@ -1592,7 +1658,6 @@ CHI_API chi_string* chi_to_lower(chi_string* chi_str)
 CHI_API chi_string* chi_switch_cases_ip(chi_string* chi_str, size_t begin, size_t end)
 {
     CHECK_NULL(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
@@ -1614,52 +1679,52 @@ CHI_API chi_string* chi_switch_cases(chi_string* chi_str)
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_ip(const chi_string* chi_str, char ch, size_t begin, size_t end)
 {
-    return _chi_count_data(chi_str, &ch, 1, begin, end);
+    return _chi_count_data(chi_str->data, chi_str->size, &ch, 1, begin, end);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count(const chi_string* chi_str, char ch)
 {
     chi_str_assert(chi_str);
-    return _chi_count_data(chi_str, &ch, 1, 0, chi_str->size);
+    return _chi_count_data(chi_str->data, chi_str->size, &ch, 1, 0, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_s_ip(const chi_string* chi_str, const char* data, size_t begin, size_t end)
 {
     data_assert(data);
-    return _chi_count_data(chi_str, data, strlen(data), begin, end);
+    return _chi_count_data(chi_str->data, chi_str->size, data, strlen(data), begin, end);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_s(const chi_string* chi_str, const char* data)
 {
     chi_str_assert(chi_str);
     data_assert(data);
-    return _chi_count_data(chi_str, data, strlen(data), 0, chi_str->size);
+    return _chi_count_data(chi_str->data, chi_str->size, data, strlen(data), 0, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_cs_ip(const chi_string* chi_str, const chi_string* data, size_t begin, size_t end)
 {
     data_assert(data);
-    return _chi_count_data(chi_str, data->data, data->size, begin, end);
+    return _chi_count_data(chi_str->data, chi_str->size, data->data, data->size, begin, end);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_cs(const chi_string* chi_str, const chi_string* data)
 {
     chi_str_assert(chi_str);
     data_assert(data);
-    return _chi_count_data(chi_str, data->data, data->size, 0, chi_str->size);
+    return _chi_count_data(chi_str->data, chi_str->size, data->data, data->size, 0, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_sv_ip(const chi_string* chi_str, chi_string_view data, size_t begin, size_t end)
 {
     data_assert(data.data);
-    return _chi_count_data(chi_str, data.data, data.size, begin, end);
+    return _chi_count_data(chi_str->data, chi_str->size, data.data, data.size, begin, end);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_sv(const chi_string* chi_str, chi_string_view data)
 {
     chi_str_assert(chi_str);
     data_assert(data.data);
-    return _chi_count_data(chi_str, data.data, data.size, 0, chi_str->size);
+    return _chi_count_data(chi_str->data, chi_str->size, data.data, data.size, 0, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_count_if_ip(const chi_string* chi_str, size_t begin, size_t end, bool(*pred)(char))
@@ -1739,10 +1804,8 @@ CHI_API CHI_CHECK_RETURN bool chi_none_of(const chi_string* chi_str, bool(*pred)
 CHI_API chi_string* chi_shuffle_ip(chi_string* chi_str, size_t begin, size_t end)
 {
     chi_str_assert(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, end, begin);
-    check_rand_seed();
 
     for (size_t i = begin; i < end; ++i)
     {
@@ -1761,7 +1824,6 @@ CHI_API chi_string* chi_shuffle(chi_string* chi_str)
 CHI_API chi_string* chi_reverse_ip(chi_string* chi_str, size_t begin, size_t end)
 {
     chi_str_assert(chi_str);
-    CHECK_CONST(chi_str);
     CHECK_NULL2(chi_str->data, chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
 
@@ -1781,7 +1843,6 @@ CHI_API CHI_CHECK_RETURN char chi_sample_ip(const chi_string* chi_str, size_t be
 {
     chi_str_assert(chi_str);
     CHECK_BEGIN_AND_END(chi_str->size, begin, end);
-    check_rand_seed();
     return chi_str->data[_chi_random_in_range((uint32_t)begin, (uint32_t)end)];
 }
 
@@ -1789,11 +1850,6 @@ CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str)
 {
     chi_str_assert(chi_str);
     return chi_sample_ip(chi_str, 0, chi_str->size);
-}
-
-CHI_API void chi_ignore_spaces(bool ignore)
-{
-    s_ignore_space = ignore;
 }
 
 CHI_API CHI_CHECK_RETURN bool chi_islower_ip(const chi_string* chi_str, size_t begin, size_t end)
@@ -1908,14 +1964,24 @@ CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str)
     return chi_islower_ip(chi_str, 0, chi_str->size);
 }
 
-CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data)
+CHI_API void chi_format(chi_string* chi_str, ...)
+{
+    chi_str_assert(chi_str);
+    
+    va_list arg_list; 
+    va_start(arg_list, chi_str); 
+    _chi_vformat(chi_str, arg_list); 
+    va_end(arg_list);
+}
+
+CHI_API CHI_CHECK_RETURN chi_string_view chi_sv(const char* data)
 {
     CHECK_NULL2(data, CHI_SVNULL);
     chi_string_view view = { .data = data, .size = strlen(data) };
     return view;
 }
 
-CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_n(const char* data, size_t size)
+CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_n(const char* data, size_t size)
 {
     CHECK_NULL2(data, CHI_SVNULL);
     CHECK_N(data, size);
@@ -1923,11 +1989,11 @@ CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_n(const char* data, size_
     return view;
 }
 
-CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_from_chi_s(const chi_string* chi_str)
+CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_from_chi_s(const chi_string* chi_str)
 {
     chi_string_view view = { 0 };
     CHECK_NULL2(chi_str, view);
-    return chi_sv_create_n(chi_str->data, chi_str->size);
+    return chi_sv_n(chi_str->data, chi_str->size);
 }
 
 CHI_API CHI_CHECK_RETURN const char* chi_sv_get(chi_string_view sv)
@@ -2032,7 +2098,7 @@ CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_substring(chi_string_view sv, si
     chi_assert(sv.size > offset, "Offset out of the range!");
     if (offset + length > sv.size)
         length = sv.size - offset;
-    return chi_sv_create_n(sv.data + offset, length);
+    return chi_sv_n(sv.data + offset, length);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_sv_find_c(chi_string_view sv, size_t offset, char delim)
@@ -2143,4 +2209,221 @@ CHI_API CHI_CHECK_RETURN size_t chi_sv_hash(chi_string_view sv)
 {
     CHECK_NULL2(sv.data, 0);
     return _append_bytes(offset_basis, (const unsigned char*)(sv.data), sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_ip(chi_string_view sv, char ch, size_t begin, size_t end)
+{
+    return _chi_count_data(sv.data, sv.size, &ch, 1, begin, end);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count(chi_string_view sv, char ch)
+{
+    return _chi_count_data(sv.data, sv.size, &ch, 1, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_s_ip(chi_string_view sv, const char* data, size_t begin, size_t end)
+{
+    data_assert(data);
+    return _chi_count_data(sv.data, sv.size, data, strlen(data), begin, end);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_s(chi_string_view sv, const char* data)
+{
+    data_assert(data);
+    return _chi_count_data(sv.data, sv.size, data, strlen(data), 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_cs_ip(chi_string_view sv, const chi_string* data, size_t begin, size_t end)
+{
+    return _chi_count_data(sv.data, sv.size, data->data, data->size, begin, end);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_cs(chi_string_view sv, const chi_string* data)
+{
+    return _chi_count_data(sv.data, sv.size, data->data, data->size, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_sv_ip(chi_string_view sv, chi_string_view data, size_t begin, size_t end)
+{
+    return _chi_count_data(sv.data, sv.size, data.data, data.size, begin, end);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_sv(chi_string_view sv, chi_string_view data)
+{
+    return _chi_count_data(sv.data, sv.size, data.data, data.size, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_if_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char))
+{
+    data_assert(sv.data);
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+
+    size_t counter = 0;
+
+    for (size_t i = begin; i < end; ++i)
+        if (pred(sv.data[i]))
+            counter++;
+    return counter;
+}
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_if(chi_string_view sv, bool(*pred)(char))
+{
+    return chi_sv_count_if_ip(sv, 0, sv.size, pred);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_all_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char))
+{
+    data_assert(sv.data);
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+
+    for (size_t i = begin; i < end; ++i)
+        if (!pred(sv.data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_all_of(chi_string_view sv, bool(*pred)(char))
+{
+    return chi_sv_all_of_ip(sv, 0, sv.size, pred);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_any_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char))
+{
+    data_assert(sv.data);
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+
+    for (size_t i = begin; i < end; ++i)
+        if (pred(sv.data[i]))
+            return true;
+    return false;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_any_of(chi_string_view sv, bool(*pred)(char))
+{
+    return chi_sv_any_of_ip(sv, 0, sv.size, pred);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_none_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char))
+{
+    data_assert(sv.data);
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+
+    for (size_t i = begin; i < end; ++i)
+        if (pred(sv.data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_none_of(chi_string_view sv, bool(*pred)(char))
+{
+    return chi_sv_none_of_ip(sv, 0, sv.size, pred);
+}
+
+CHI_API CHI_CHECK_RETURN char chi_sv_sample_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    return sv.data[_chi_random_in_range((uint32_t)begin, (uint32_t)end)];
+}
+
+CHI_API CHI_CHECK_RETURN char chi_sv_sample(chi_string_view sv)
+{
+    return chi_sv_sample_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_islower_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!islower(sv.data[i]))
+            ignore_spaces_or_return(sv.data[i], return false);
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_islower(chi_string_view sv)
+{
+    return chi_sv_islower_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isupper_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isupper(sv.data[i]))
+            ignore_spaces_or_return(sv.data[i], return false);
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isupper(chi_string_view sv)
+{
+    return chi_sv_isupper_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalnum_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isalnum(sv.data[i]))
+            ignore_spaces_or_return(sv.data[i], return false);
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalnum(chi_string_view sv)
+{
+    return chi_sv_isalnum_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalpha_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isalpha(sv.data[i]))
+            ignore_spaces_or_return(sv.data[i], return false);
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalpha(chi_string_view sv)
+{
+    return chi_sv_isalpha_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isdigit_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isdigit(sv.data[i]))
+            ignore_spaces_or_return(sv.data[i], return false);
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isdigit(chi_string_view sv)
+{
+    return chi_sv_isdigit_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isprintable_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isprint(sv.data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isprintable(chi_string_view sv)
+{
+    return chi_sv_isprintable_ip(sv, 0, sv.size);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isspace_ip(chi_string_view sv, size_t begin, size_t end)
+{
+    CHECK_BEGIN_AND_END(sv.size, begin, end);
+    for (size_t i = begin; i < end; ++i)
+        if (!isspace(sv.data[i]))
+            return false;
+    return true;
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isspace(chi_string_view sv)
+{
+    return chi_sv_islower_ip(sv, 0, sv.size);
 }

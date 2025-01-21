@@ -88,11 +88,11 @@ CHI_API __declspec(noreturn) void _chi_assert_show_message(const char* message, 
 #define chi_assert(expression, message)
 #endif // _CHI_DEBUG
 
- /* main structs begin */
+/* main structs begin */
 
- /**
-  * @brief Represents a dynamically allocated string.
-  */
+/**
+ * @brief Represents a dynamically allocated string.
+ */
 typedef struct _chi_string chi_string;
 
 /**
@@ -119,12 +119,12 @@ static const size_t chi_npos = ((size_t)-1);
 /**
  * @brief Represents a null `chi_string` with zero size, capacity and null data.
  */
-static const chi_string* chi_snull;
+extern const chi_string* chi_snull;
 
 /**
  * @brief Represents a null `chi_string_view` with zero size and null data.
  */
-static const chi_string_view chi_svnull = { 0, 0 };
+static const chi_string_view chi_svnull = { NULL, 0 };
 
 /* helper macros begin */
 
@@ -136,34 +136,11 @@ static const chi_string_view chi_svnull = { 0, 0 };
 #define chichi() chi_create_empty(0)
 
 /**
- * @brief Creates a `chi_string` from a C-string.
- *
- * @param data The C-string to create the `chi_string` from.
- * @return Returns a `chi_string` instance.
- */
-#define CHI_S(data) chi_create(data)
-
-/**
- * @brief Creates a `chi_string_view` from a C-string.
- *
- * @param data The C-string to create the `chi_string_view` from.
- * @return Returns a `chi_string_view` instance.
- */
-#define CHI_SV(data) chi_sv_create(data)
-
-/**
  * @brief Returns a null `chi_string`.
  *
  * @return Returns a `chi_string` instance representing a null string.
  */
 #define CHI_SNULL chi_snull
-
- /**
-  * @brief Creates a null `chi_string`.
-  *
-  * @return Returns a `chi_string` instance representing a null string.
-  */
-#define CHI_CSNULL chi_create(NULL)
 
 /**
  * @brief Represents a null `chi_string_view`.
@@ -195,69 +172,39 @@ static const chi_string_view chi_svnull = { 0, 0 };
  * @brief Accesses an element of the chi_string at a specific index.
  *
  * This macro returns the character at the given `idx` in the `chi_string`.
- * If the string is not constant, the character can be modified.
- * If the string is constant, the returned character is read-only.
  *
  * @param chi The chi_string to access.
  * @param idx The index of the character to access.
  * @return The character at the specified index.
   */
-#define CHI_AT(chi, idx) ((!chi_is_const(chi)) ? (*chi_at(chi, idx)) : (chi_cat(chi, idx)))
+#define CHI_AT(chi, idx) (*chi_at(chi, idx))
 
 /**
  * @brief Accesses the first character of the chi_string.
  *
  * This macro returns the first character of the `chi_string`.
- * If the string is not constant, the character can be modified.
- * If the string is constant, the returned character is read-only.
  *
  * @param chi The chi_string to access.
  * @return The first character of the string.
  */
-#define CHI_FRONT(chi) ((!chi_is_const(chi)) ? (*chi_at(chi, 0)) : (chi_cat(chi, 0)))
+#define CHI_FRONT(chi) (*chi_at(chi, 0))
 
 /**
  * @brief Accesses the last character of the chi_string.
  *
  * This macro returns the last character of the `chi_string`.
- * If the string is not constant, the character can be modified.
- * If the string is constant, the returned character is read-only.
  *
  * @param chi The chi_string to access.
  * @return The last character of the string.
  */
-#define CHI_BACK(chi) ((!chi_is_const(chi)) ? (*chi_at(chi, chi_size(chi) - 1)) : (chi_cat(chi, chi_size(chi) - 1)))
+#define CHI_BACK(chi) (*chi_at(chi_size(chi) - 1))
 
-/**
- * @brief Returns the pointer to the beginning of the chi_string.
- *
- * This macro returns a pointer to the first character of the `chi_string`.
- * If the string is not constant, the pointer allows modification of the string's content.
- * If the string is constant, the returned pointer is read-only.
- *
- * @param chi The chi_string to access.
- * @return A pointer to the first character of the string.
- */
-#define CHI_BEGIN(chi) ((!chi_is_const(chi)) ? (chi_begin(chi)) : (chi_cbegin(chi)))
-
-/**
- * @brief Returns the pointer to the end of the chi_string.
- *
- * This macro returns a pointer to the position after the last character of the `chi_string`.
- * If the string is not constant, the pointer allows modification of the string's content.
- * If the string is constant, the returned pointer is read-only.
- *
- * @param chi The chi_string to access.
- * @return A pointer to the end of the string.
- */
-#define CHI_END(chi) ((!chi_is_const(chi)) ? (chi_end(chi)) : (chi_cend(chi)))
- 
 /* helper macros end */
 
 /**
  * @brief Calculates a new capacity for a `chi_string` based on the old and new capacities.
  * Note: This is a non-standard helper function designed to manage memory efficiently.
- * 
+ *
  * @param old_cap The current capacity of the `chi_string`.
  * @param new_cap The requested new capacity.
  * @return Returns the calculated new capacity, which is usually larger than the requested new capacity to minimize reallocations.
@@ -267,7 +214,7 @@ CHI_API CHI_CHECK_RETURN size_t _chi_calculate_capacity(size_t old_cap, size_t n
 /**
  * @brief Computes a hash value for a null-terminated C string.
  * Note: This function can be used to generate a hash for strings to be used in hash tables or for other hashing purposes.
- * 
+ *
  * @param str The null-terminated C string to be hashed.
  * @return Returns the hash value of the string.
  */
@@ -276,10 +223,25 @@ CHI_API CHI_CHECK_RETURN size_t chi_hash_s(const char* str);
 /**
  * @brief Enables or disables the check for n parameters in chi functions.
  * Note: By default, the check is disabled.
- * 
+ *
  * @param enable A boolean value to enable (true) or disable (false) the check.
  */
 CHI_API void chi_enable_check_n(bool enable);
+
+/**
+ * @brief Sets whether to ignore space characters in certain validation functions.
+ *
+ * When `ignore` is set to `true`, functions like `chi_islower`, `chi_isupper`,
+ * `chi_isalnum`, `chi_isalpha`, `chi_isdigit`, and their `_ip` variants will
+ * disregard space characters when determining if the string meets the specified condition.
+ * Note: By default, the ignore is disabled.
+ *
+ * @param ignore Flag to indicate whether space characters should be ignored.
+ */
+CHI_API void chi_ignore_spaces(bool ignore);
+
+//TODO
+CHI_API void chi_set_next_items_no_format(uint32_t count);
 
 /**
  * @brief Removes a memory block from cleanup operations.
@@ -309,24 +271,24 @@ CHI_API void chi_add_to_the_free_list(void* block, bool is_chi);
 
 /**
  * @brief Creates a new chi_string instance with the given data.
- * 
+ *
  * @param data The data to initialize the string with.
  * @return A pointer to the newly created chi_string.
  */
-CHI_API CHI_CHECK_RETURN chi_string* chi_create(const char* data);
+CHI_API CHI_CHECK_RETURN chi_string* chi_create(const char* data, ...);
 
 /**
  * @brief Creates a new chi_string instance with the given data and size.
- * 
+ *
  * @param data The data to initialize the string with.
  * @param size The size of the data.
  * @return A pointer to the newly created chi_string.
  */
-CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size);
+CHI_API CHI_CHECK_RETURN chi_string* chi_create_n(const char* data, size_t size, ...);
 
 /**
  * @brief Creates a new empty chi_string instance with the specified size.
- * 
+ *
  * @param size The size of the string to create.
  * @return A pointer to the newly created chi_string.
  */
@@ -342,7 +304,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_with_capacity(size_t capacity);
 
 /**
  * @brief Creates a new chi_string instance filled with the specified character.
- * 
+ *
  * @param ch The character to fill the string with.
  * @param size The size of the string to create.
  * @return A pointer to the newly created chi_string.
@@ -351,7 +313,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_and_fill(char ch, size_t size);
 
 /**
  * @brief Creates a new chi_string instance by copying an existing chi_string.
- * 
+ *
  * @param chi_str The chi_string to copy.
  * @return A pointer to the newly created chi_string.
  */
@@ -359,51 +321,20 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_from_chi_s(const chi_string* chi
 
 /**
  * @brief Creates a new chi_string instance from a chi_string_view.
- * 
+ *
  * @param chi_sv The chi_string_view to copy from.
  * @return A pointer to the newly created chi_string.
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_from_chi_sv(chi_string_view chi_sv);
 
-/**
- * @brief Wraps an existing character array in a chi_string.
- * Note: This function may be unsafe if the data is not properly managed.
- * 
- * @param data The character array to wrap.
- * @return A pointer to the newly created chi_string.
- */
-CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi(char* data);
-
-/**
- * @brief Wraps an existing character array in a chi_string with a specified size.
- * Note: This function may be unsafe if the data is not properly managed.
- * 
- * @param data The character array to wrap.
- * @param n The size of the character array.
- * @return A pointer to the newly created chi_string.
- */
-CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_n(char* data, size_t n);
-
-/**
- * @brief Wraps an existing character array in a chi_string with a specified capacity.
- * Note: This function may be unsafe if the data is not properly managed.
- * 
- * @param data The character array to wrap.
- * @param capacity The capacity of the character array.
- * @return A pointer to the newly created chi_string.
- */
-CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t capacity);
+CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi(char* data, size_t n, ...);
 
 /**
  * @brief Wraps an existing character array in a chi_string with a specified size and capacity.
  * Note: This function may be unsafe if the data is not properly managed.
- * 
- * @param data The character array to wrap.
- * @param n The size of the character array.
- * @param capacity The capacity of the character array.
- * @return A pointer to the newly created chi_string.
+
  */
-CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_n_c(char* data, size_t n, size_t capacity);
+CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t n, size_t capacity, ...);
 
 /**
  * @brief Begins a scope for chi_string operations.
@@ -422,7 +353,7 @@ CHI_API void chi_cleanup();
 
 /**
  * @brief Frees a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to free.
  */
 CHI_API void chi_free(chi_string* chi_str);
@@ -441,21 +372,21 @@ CHI_API void chi_str_array_free(chi_string** chi_str_array, size_t size);
 
 /**
  * @brief Clears the contents of a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to clear.
  */
 CHI_API void chi_clear(chi_string* chi_str);
 
 /**
  * @brief Releases the internal character array of a chi_string.
- * 
+ *
  * @param chi_str The chi_string to release.
  */
 CHI_API char* chi_release(chi_string* chi_str);
 
 /**
  * @brief Resizes a chi_string instance to the specified size.
- * 
+ *
  * @param chi_str The chi_string to resize.
  * @param new_size The new size of the chi_string.
  */
@@ -463,7 +394,7 @@ CHI_API void chi_resize(chi_string* chi_str, size_t new_size);
 
 /**
  * @brief Reserves capacity for a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to reserve capacity for.
  * @param new_cap The new capacity of the chi_string.
  */
@@ -471,14 +402,14 @@ CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap);
 
 /**
  * @brief Shrinks the capacity of a chi_string instance to fit its size.
- * 
+ *
  * @param chi_str The chi_string to shrink.
  */
 CHI_API void chi_shrink_to_fit(chi_string* chi_str);
 
 /**
  * @brief Resets a chi_string instance with new data.
- * 
+ *
  * @param chi_str The chi_string to reset.
  * @param data The new data for the chi_string.
  * @return A pointer to the reset chi_string.
@@ -487,7 +418,7 @@ CHI_API chi_string* chi_reset(chi_string* chi_str, const char* data);
 
 /**
  * @brief Resets a chi_string instance with new data and size.
- * 
+ *
  * @param chi_str The chi_string to reset.
  * @param data The new data for the chi_string.
  * @param n The size of the new data.
@@ -510,7 +441,7 @@ CHI_API chi_string* chi_reset_cs(chi_string* chi_str, const chi_string* data);
 
 /**
  * @brief Resets a chi_string instance with another chi_string.
- * 
+ *
  * @param chi_str The chi_string to reset.
  * @param chi_string_view to copy from.
  * @return A pointer to the reset chi_string.
@@ -519,7 +450,7 @@ CHI_API chi_string* chi_reset_from_sv(chi_string* chi_str, chi_string_view sv);
 
 /**
  * @brief Retrieves the character array of a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to get the data of.
  * @return A pointer to the character array.
  */
@@ -606,7 +537,7 @@ CHI_API const char* chi_cend(const chi_string* chi_str);
 
 /**
  * @brief Appends a character array to a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to append to.
  * @param data The character array to append.
  * @return A pointer to the chi_string after appending.
@@ -615,7 +546,7 @@ CHI_API chi_string* chi_append(chi_string* chi_str, const char* data);
 
 /**
  * @brief Appends a character to a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to append to.
  * @param ch The character to append.
  * @return A pointer to the chi_string after appending.
@@ -634,7 +565,7 @@ CHI_API chi_string* chi_append_n(chi_string* chi_str, const char* data, size_t n
 
 /**
  * @brief Appends another chi_string to a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to append to.
  * @param other The chi_string to append.
  * @return A pointer to the chi_string after appending.
@@ -643,7 +574,7 @@ CHI_API chi_string* chi_append_cs(chi_string* lhs, const chi_string* rhs);
 
 /**
  * @brief Appends chi_string_view to a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to append to.
  * @param The chi_string_view to append.
  * @return A pointer to the chi_string after appending.
@@ -652,7 +583,7 @@ CHI_API chi_string* chi_append_sv(chi_string* lhs, chi_string_view rhs);
 
 /**
  * @brief Appends a character to a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to append to.
  * @param ch The character to append.
  * @return A pointer to the chi_string after appending.
@@ -662,7 +593,7 @@ CHI_API chi_string* chi_push_back(chi_string* chi_str, char data);
 /**
  * @brief Removes the last character from the `chi_string`.
  * Note: If the `chi_string` is empty, this function will not modify the string.
- * 
+ *
  * @param chi_str The `chi_string` from which the last character will be removed.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
  */
@@ -748,65 +679,9 @@ CHI_API chi_string* chi_erase(chi_string* chi_str, size_t begin, size_t end);
 CHI_API chi_string* chi_erase_from(chi_string* chi_str, size_t offset);
 
 /**
-<<<<<<< HEAD
- * @brief Sets a chi_string as constant and assigns a key to it.
- *
- * This function marks the given `chi_string` as constant by setting the `is_const` flag to true
- * and assigning the provided key to the string. If the string is already marked as constant,
- * the operation fails.
- *
- * @param chi_str The chi_string to be marked as constant.
- * @param key The key to assign to the chi_string for constancy control.
- * @return true if the operation was successful (the string was not already constant).
- * @return false if the string was already marked as constant.
- */
-CHI_API bool chi_add_const(chi_string* chi_str, unsigned int key);
-
-/**
- * @brief Removes the constant state from a chi_string if the correct key is provided.
- *
- * This function unmarks a chi_string as constant only if the provided key matches the
- * currently assigned `const_key`. If the keys match, the `is_const` flag is set to false.
- *
- * @param chi_str The chi_string to be unmarked as constant.
- * @param key The key to validate for removing the constant state.
- * @return true if the constant state was successfully removed.
- * @return false if the string was not constant or if the key did not match.
- */
-CHI_API bool chi_remove_const(chi_string* chi_str, unsigned int key);
-
-/**
- * @brief Checks if a chi_string is in a constant state.
- *
- * This function returns whether the given `chi_string` is marked as constant.
- * A constant string means its contents are not supposed to be modified.
- *
- * @param chi_str Const pointer to the `chi_string` to check.
- * @return Boolean value indicating if the string is constant (`true`) or not (`false`).
- */
-CHI_API bool chi_is_const(const chi_string* chi_str);
-
-/**
- * @brief Resets the constancy key of a chi_string if the correct current key is provided.
- *
- * This function changes the `const_key` of a chi_string to a new key only if the provided
- * `old_key` matches the currently assigned key. If the string is not marked as constant,
- * or if the old key does not match, the operation fails.
- *
- * @param chi_str The chi_string whose constant key will be reset.
- * @param old_key The current key to validate before resetting.
- * @param new_key The new key to assign if validation is successful.
- * @return true if the constant key was successfully updated.
- * @return false if the string was not constant or the old key did not match.
- */
-CHI_API bool chi_reset_const_key(chi_string* chi_str, unsigned int old_key, unsigned int new_key);
-
-/**
-=======
->>>>>>> 3332771ca14c7a38b3862e646ddd15e61de88c2a
  * @brief Retrieves the size of a chi_string instance.
  * Note: This function using assertion
- * 
+ *
  * @param chi_str The chi_string to get the size of.
  * @return The size of the chi_string.
  */
@@ -815,15 +690,15 @@ CHI_API CHI_CHECK_RETURN size_t chi_size(const chi_string* chi_str);
 /**
  * @brief Retrieves the size of a chi_string instance.
  * Note: This function NOT using assertion
- * 
+ *
  * @param chi_str The chi_string to get the size of.
  * @return The size of the chi_string.
  */
-CHI_API CHI_CHECK_RETURN size_t chi_length(const chi_string* chi_str); 
+CHI_API CHI_CHECK_RETURN size_t chi_length(const chi_string* chi_str);
 
 /**
  * @brief Retrieves the capacity of a chi_string instance.
- * 
+ *
  * @param chi_str The chi_string to get the capacity of.
  * @return The capacity of the chi_string.
  */
@@ -856,7 +731,7 @@ CHI_API CHI_CHECK_RETURN char chi_back(const chi_string* chi_str);
 /**
  * @brief Compares the `chi_string` to a null-terminated C string for equality.
  * Note: The comparison is case-sensitive.
- * 
+ *
  * @param lhs The `chi_string` instance to compare.
  * @param rhs The null-terminated C string to compare against.
  * @return Returns `true` if the `chi_string` is equal to the C string, `false` otherwise.
@@ -866,7 +741,7 @@ CHI_API CHI_CHECK_RETURN bool chi_equal_s(const chi_string* lhs, const char* rhs
 /**
  * @brief Compares the `chi_string` to another `chi_string_view` for equality.
  * Note: The comparison is case-sensitive.
- * 
+ *
  * @param lhs The `chi_string` instance to compare.
  * @param rhs The `chi_string_view` to compare against.
  * @return Returns `true` if the `chi_string` is equal to the `chi_string_view`, `false` otherwise.
@@ -875,7 +750,7 @@ CHI_API CHI_CHECK_RETURN bool chi_equal_sv(const chi_string* lhs, chi_string_vie
 
 /**
  * @brief Checks if two chi_string instances are equal.
- * 
+ *
  * @param chi_str1 The first chi_string to compare.
  * @param chi_str2 The second chi_string to compare.
  * @return True if the chi_strings are equal, false otherwise.
@@ -885,7 +760,7 @@ CHI_API CHI_CHECK_RETURN bool chi_equal(const chi_string* lhs, const chi_string*
 /**
  * @brief Compares the `chi_string` to a null-terminated C string for equality, ignoring case.
  * Note: The comparison is case-insensitive.
- * 
+ *
  * @param lhs The `chi_string` instance to compare.
  * @param rhs The null-terminated C string to compare against.
  * @return Returns `true` if the `chi_string` is equal to the C string ignoring case, `false` otherwise.
@@ -895,7 +770,7 @@ CHI_API CHI_CHECK_RETURN bool chi_equal_ignorecase_s(const chi_string* lhs, cons
 /**
  * @brief Compares the `chi_string` to a `chi_string_view` for equality, ignoring case.
  * Note: The comparison is case-insensitive.
- * 
+ *
  * @param lhs The `chi_string` instance to compare.
  * @param rhs The `chi_string_view` to compare against.
  * @return Returns `true` if the `chi_string` is equal to the `chi_string_view` ignoring case, `false` otherwise.
@@ -905,7 +780,7 @@ CHI_API CHI_CHECK_RETURN bool chi_equal_ignorecase_sv(const chi_string* lhs, chi
 /**
  * @brief Compares two `chi_string` instances for equality, ignoring case.
  * Note: The comparison is case-insensitive.
- * 
+ *
  * @param lhs The first `chi_string` instance to compare.
  * @param rhs The second `chi_string` instance to compare against.
  * @return Returns `true` if the two `chi_string` instances are equal ignoring case, `false` otherwise.
@@ -932,7 +807,7 @@ CHI_API CHI_CHECK_RETURN bool chi_ends_with(const chi_string* chi_str, char ch);
 
 /**
  * @brief Checks if a chi_string instance is empty.
- * 
+ *
  * @param chi_str The chi_string to check.
  * @return True if the chi_string is empty, false otherwise.
  */
@@ -941,7 +816,7 @@ CHI_API CHI_CHECK_RETURN bool chi_is_empty(const chi_string* chi_str);
 /**
  * @brief Fills the entire `chi_string` with the specified character.
  * Note: This function modifies the content of the existing string without changing its size or capacity.
- * 
+ *
  * @param chi_str The `chi_string` to be filled.
  * @param ch The character to fill the string with.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
@@ -951,7 +826,7 @@ CHI_API chi_string* chi_fill(chi_string* chi_str, char ch);
 /**
  * @brief Fills a portion of the `chi_string` with the specified character.
  * Note: It is the responsibility of the calling function to ensure that `offset` and `length` parameters are valid.
- * 
+ *
  * @param chi_str The `chi_string` to be filled.
  * @param offset The starting point of the portion to be filled (0-based index).
  * @param length The length of the portion to be filled.
@@ -963,7 +838,7 @@ CHI_API chi_string* chi_fill_n(chi_string* chi_str, size_t offset, size_t length
 /**
  * @brief Copies the content of one `chi_string` to another.
  * Note: The destination `chi_string` will be resized if necessary to accommodate the content of the source string.
- * 
+ *
  * @param chi_str The destination `chi_string` where the content will be copied to.
  * @param src_cs The source `chi_string` from which the content will be copied.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
@@ -972,7 +847,7 @@ CHI_API chi_string* chi_copy(chi_string* chi_str, const chi_string* src_cs);
 
 /**
  * @brief Creates a substring from the specified `chi_string`.
- * 
+ *
  * @param chi_str The original `chi_string` from which the substring will be created.
  * @param offset The starting point of the substring (0-based index).
  * @param length The length of the substring.
@@ -1052,7 +927,7 @@ CHI_API CHI_CHECK_RETURN chi_string** chi_split_sv(const chi_string* chi_str, ch
 /**
  * @brief Removes repeated consecutive characters from the `chi_string`.
  * Note: This function will keep only the first occurrence of each repeated character.
- * 
+ *
  * @param chi_str The `chi_string` from which repeated characters will be removed.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
  */
@@ -1060,7 +935,7 @@ CHI_API chi_string* chi_remove_repated(chi_string* chi_str);
 
 /**
  * @brief Removes all occurrences of the specified character from the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` from which the character will be removed.
  * @param delim The character to be removed.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
@@ -1069,7 +944,7 @@ CHI_API chi_string* chi_remove_c(chi_string* chi_str, char delim);
 
 /**
  * @brief Removes all occurrences of the specified sequence of characters from the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` from which the sequence will be removed.
  * @param delim The sequence of characters to be removed.
  * @param n The length of the sequence to be removed.
@@ -1079,7 +954,7 @@ CHI_API chi_string* chi_remove_n(chi_string* chi_str, const char* delim, size_t 
 
 /**
  * @brief Removes all occurrences of the specified string from the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` from which the string will be removed.
  * @param delim The string to be removed.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
@@ -1088,7 +963,7 @@ CHI_API chi_string* chi_remove(chi_string* chi_str, const char* delim);
 
 /**
  * @brief Removes all occurrences of the specified `chi_string` from the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` from which the `chi_string` will be removed.
  * @param delim The `chi_string` to be removed.
  * @return Returns the modified `chi_string` if successful, otherwise returns `NULL`.
@@ -1097,7 +972,7 @@ CHI_API chi_string* chi_remove_cs(chi_string* chi_str, const chi_string* delim);
 
 /**
  * @brief Removes all occurrences of the specified `chi_string_view` from the `chi_string`.
- * 
+ *
  *
  * @param chi_str The `chi_string` from which the `chi_string_view` will be removed.
  * @param delim The `chi_string_view` to be removed.
@@ -1135,9 +1010,12 @@ CHI_API chi_string* chi_trim_right(chi_string* chi_str);
  */
 CHI_API chi_string* chi_trim(chi_string* chi_str);
 
+// todo
+CHI_API chi_string* chi_replace_ip(chi_string* chi_str, size_t begin, size_t end, const char* new_value); // TODO
+
 /**
  * @brief Replaces all occurrences of a character with another character in the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` instance to modify.
  * @param old_value The character to be replaced.
  * @param new_value The character to replace with.
@@ -1147,7 +1025,7 @@ CHI_API chi_string* chi_replace_c(chi_string* chi_str, char old_value, char new_
 
 /**
  * @brief Replaces all occurrences of a substring with another substring in the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` instance to modify.
  * @param old_value The null-terminated C string to be replaced.
  * @param new_value The null-terminated C string to replace with.
@@ -1157,7 +1035,7 @@ CHI_API chi_string* chi_replace(chi_string* chi_str, const char* old_value, cons
 
 /**
  * @brief Replaces all occurrences of a `chi_string_view` with another `chi_string_view` in the `chi_string`.
- * 
+ *
  * @param chi_str The `chi_string` instance to modify.
  * @param old_value The `chi_string_view` to be replaced.
  * @param new_value The `chi_string_view` to replace with.
@@ -1786,18 +1664,6 @@ CHI_API CHI_CHECK_RETURN char chi_sample_ip(const chi_string* chi_str, size_t be
 CHI_API CHI_CHECK_RETURN char chi_sample(const chi_string* chi_str);
 
 /**
- * @brief Sets whether to ignore space characters in certain validation functions.
- *
- * When `ignore` is set to `true`, functions like `chi_islower`, `chi_isupper`,
- * `chi_isalnum`, `chi_isalpha`, `chi_isdigit`, and their `_ip` variants will
- * disregard space characters when determining if the string meets the specified condition.
- * Note: By default, the ignore is disabled.
- *
- * @param ignore Flag to indicate whether space characters should be ignored.
- */
-CHI_API void chi_ignore_spaces(bool ignore);
-
-/**
  * @brief Checks if all characters in the specified range of the string are lowercase.
  *
  * This function iterates through the characters in the chi_string from the `begin`
@@ -1965,7 +1831,7 @@ CHI_API CHI_CHECK_RETURN bool chi_isspace_ip(const chi_string* chi_str, size_t b
  */
 CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str);
 
-
+CHI_API void chi_format(chi_string* chi_str, ...);
 
 /* CHI STRING END */
 
@@ -1979,7 +1845,7 @@ CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str);
  * @param data Pointer to the null-terminated C string.
  * @return A chi_string_view referencing the provided C string.
  */
-CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data);
+CHI_API CHI_CHECK_RETURN chi_string_view chi_sv(const char* data);
 
 /**
  * @brief Creates a chi_string_view from a C string with a specified size.
@@ -1990,7 +1856,7 @@ CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create(const char* data);
  * @param size Size of the C string.
  * @return A chi_string_view referencing the provided C string.
  */
-CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_n(const char* data, size_t size);
+CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_n(const char* data, size_t size);
 
 /**
  * @brief Creates a chi_string_view from a chi_string.
@@ -2000,7 +1866,7 @@ CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_n(const char* data, size_
  * @param chi_str Pointer to the chi_string.
  * @return A chi_string_view referencing the data in the provided chi_string.
  */
-CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_create_from_chi_s(const chi_string* chi_str);
+CHI_API CHI_CHECK_RETURN chi_string_view chi_sv_from_chi_s(const chi_string* chi_str);
 
 /**
  * @brief Gets the data pointer of the chi_string_view.
@@ -2430,8 +2296,71 @@ CHI_API CHI_CHECK_RETURN unsigned long long chi_sv_toull(chi_string_view sv);
  */
 CHI_API CHI_CHECK_RETURN size_t chi_sv_hash(chi_string_view sv);
 
-/* CHI STRING VIEW END */
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_ip(chi_string_view sv, char ch, size_t begin, size_t end);
 
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count(chi_string_view sv, char ch);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_s_ip(chi_string_view sv, const char* data, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_s(chi_string_view sv, const char* data);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_cs_ip(chi_string_view sv, const chi_string* data, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_cs(chi_string_view sv, const chi_string* data);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_sv_ip(chi_string_view sv, chi_string_view data, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_sv(chi_string_view sv, chi_string_view data);
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_if_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN size_t chi_sv_count_if(chi_string_view sv, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_all_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_all_of(chi_string_view sv, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_any_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_any_of(chi_string_view sv, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_none_of_ip(chi_string_view sv, size_t begin, size_t end, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_none_of(chi_string_view sv, bool(*pred)(char));
+
+CHI_API CHI_CHECK_RETURN char chi_sv_sample_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN char chi_sv_sample(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_islower_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_islower(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isupper_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isupper(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalnum_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalnum(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalpha_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isalpha(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isdigit_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isdigit(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isprintable_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isprintable(chi_string_view sv);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isspace_ip(chi_string_view sv, size_t begin, size_t end);
+
+CHI_API CHI_CHECK_RETURN bool chi_sv_isspace(chi_string_view sv);
+
+/* CHI STRING VIEW END */
 
 _CHI_HEADER_END
 

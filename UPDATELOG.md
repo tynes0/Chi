@@ -49,4 +49,22 @@
 * Update 1.24.5: Added CHI_BEGIN AND CHI_END.
 * Update 1.24.6: Fixed chi_cbegin warning error.
 * Update 1.24.7: chi_set_constant_state removed and chi_add_const, chi_remove_const, chi_set_const_key added. (chi_strings will now be made constant with a specific key and cannot be made non-constant without entering that key.)
-
+* Update 2.0.0: Version 2.0 update: (2.0.1 to 2.5.2)
+* Update 2.0.1: CHI_S - CHI_SV removed.
+* Update 2.0.2: CHI_CSNULL removed.
+* Update 2.0.3: CHI_BEGIN - CHI_END removed.
+* Update 2.0.4: CHI_BEGIN - CHI_END removed.
+* Update 2.0.5: chi_make_chi_n - chi_make_chi_n_c removed. (In fact, chi_make_chi and chi_make_chi_c now do the same thing.)
+* Update 2.1.0: Removed chi string locking with keys. (chi_add_const - chi_remove_const - chi_is_const - chi_reset_const_key)
+* Update 2.1.1: Fixed CHI_AT, CHI_FRONT and CHI_BACK.
+* Update 2.2.0: chi_replace_ip added.
+* Update 2.2.1: chi_sv_create renamed to chi_sv. chi_sv_create_n renamed to chi_sv_n. chi_sv_create_from_chi_s renamed to chi_sv_from_chi_s.
+* Update 2.3.0: New sv count functions has been added. (chi_sv_count_ip, chi_sv_count, chi_sv_count_s_ip, chi_sv_count_s, chi_sv_count_cs_ip, chi_sv_count_cs, chi_sv_count_sv_ip, chi_sv_count_sv, chi_sv_count_if_ip, chi_sv_count_if)
+* Update 2.3.1: New sv predicate algorithm functions has been added. (chi_sv_all_of_ip, chi_sv_all_of, chi_sv_any_of_ip, chi_sv_any_of_ip, chi_sv_none_of_ip, chi_sv_none_of)
+* Update 2.3.2: chi_sv_sample_ip and chi_sv_sample functions added.
+* Update 2.3.3: New sv classification functions has been added. (chi_sv_islower_ip, chi_sv_islower, chi_sv_isupper_ip, chi_sv_isupper, chi_sv_isalnum_ip, chi_sv_isalnum, chi_sv_isalpha_ip, chi_sv_isalpha, chi_sv_isdigit_ip, chi_sv_isdigit, chi_sv_isprintable_ip, chi_sv_isprintable, chi_sv_isspace_ip, chi_sv_isspace)
+* Update 2.4.0: chi_format has been added. chi_string generating functions (chi_create... , chi_make...) can now take arguments. The arguments will be written in the string as {i} (int). For example: chi_string_create("Hello {i} world{c} {s}", 100, '!', "This is a message");
+* Update 2.4.1: chi_set_next_items_no_format has been added. With this function, the formatting process will be ignored for the number entered. Note: Since the purpose of the chi_format function is to perform direct formatting, it cannot be ignored.
+* Update 2.5.0: chi_snull fixed.
+* Update 2.5.1: All replace functions fixed.
+* Update 2.5.2: chi_count_... implementations has changed. This allows chi_sv_count_... functions to use the same implementation.

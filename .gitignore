@@ -8,5 +8,8 @@ tests/
 *.user
 *.hint
 
+# time measurment
+coco.h 
+
 main.c
 main.cpp

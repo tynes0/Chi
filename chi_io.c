@@ -15,11 +15,11 @@
 #define if_null_write_empty(data, file)         do { if(data == NULL) { return _write_data("", 1, file); } } while(0)
 #define if_null_write_empty_fp(data, fp, om)    do { if(data == NULL) { return _write_data_fp("", 1, fp, om); } } while(0)
 #define CHECK_NULL(ptr, retval)                 do { if(ptr == NULL) { return retval; } } while(0)
-#define CHECK_N(ptr, n)                         do { if(s_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0)
+#define CHECK_N(ptr, n)                         do { if(g_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0)
 
 #define MAX_BUFFER_LEN 8192
 
-extern bool s_check_n;
+extern bool g_check_n;
 
 struct _chi_string
 {
@@ -128,7 +128,7 @@ bool chi_write_fp(const chi_string* chi_str, const char* filepath)
     chi_assert(filepath != NULL, "NULL filepath!");
     if_null_write_empty_fp(chi_str->data, filepath, "w+");
     return _write_data_fp(chi_str->data, chi_str->size, filepath, "w+");
- }
+}
 
 CHI_API bool chi_app_to(const chi_string* chi_str, const char* filepath)
 {
