@@ -70,3 +70,11 @@
 * Update 2.5.2: chi_count_... implementations has changed. This allows chi_sv_count_... functions to use the same implementation.
 * Update 2.5.3: FIX TYPO.
 * Update 2.5.4: Added missing doxygen format function description comments.
+* Update 2.6.0: Some adjustments have been made to the code in preparation for chi_arena.
+* Update 2.6.1: Macro usages that can be functionalized have been converted into functions.
+* Update 2.6.2: chi_use_arena, chi_unuse_arena, chi_arena_is_using, chi_arena_create_str, chi_arena_free, chi_arena_create_ptr functions has been added, Now you can use arenas for local usage.
+* Update 2.6.3: chi_arena_load and chi_arena_create_empty_str functions has been added.
+* Update 2.6.4: chi_substring_to function has been added.
+* Update 2.6.5: The ptr-chi_string distinction in the implementation has been removed. There is no need to use separate arenas for both anymore. It will be possible to track ptr or chi_string in a single arena.
+* Update 2.6.6: Some implementation issues have been fixed. Some unnecessary codes have been removed.
+* Update 2.6.7: The part containing variables and structures in the chi.c file has been made more organized.

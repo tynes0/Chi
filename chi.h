@@ -47,7 +47,7 @@
 #ifdef _CHI_CPP
 #define _CHI_HEADER_BEGIN       _CHI_PRAGMA(warning(push)) _CHI_PRAGMA(warning(disable : 4190)) extern "C" {
 #define _CHI_HEADER_END         } _CHI_PRAGMA(warning(pop))
-#else // !_CHI_CPPp
+#else // !_CHI_CPP
 #define _CHI_HEADER_BEGIN
 #define _CHI_HEADER_END
 #endif // _CHI_CPP
@@ -108,6 +108,8 @@ struct _chi_string_view
  * @brief Alias for the _chi_string_view structure.
  */
 typedef struct _chi_string_view chi_string_view;
+
+typedef struct _chi_arena chi_arena;
 
 /* main structs end */
 
@@ -858,6 +860,8 @@ CHI_API chi_string* chi_copy(chi_string* chi_str, const chi_string* src_cs);
  * @return Returns a new `chi_string` structure if successful, otherwise returns `NULL`.
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_substring(const chi_string* chi_str, size_t offset, size_t length);
+
+CHI_API void chi_substring_to(const chi_string* chi_str, chi_string* dest, size_t offset, size_t length);
 
 /**
  * @brief Splits the chi_string by spaces.
@@ -1850,6 +1854,15 @@ CHI_API CHI_CHECK_RETURN bool chi_isspace(const chi_string* chi_str);
  * @param ... The variadic arguments to use for formatting the string.
  */
 CHI_API void chi_format(chi_string* chi_str, ...);
+
+CHI_API CHI_CHECK_RETURN chi_arena* chi_use_arena();
+CHI_API void chi_unuse_arena(chi_arena* arena);
+CHI_API CHI_CHECK_RETURN bool chi_arena_is_using(const chi_arena* arena);
+CHI_API CHI_CHECK_RETURN chi_string* chi_arena_create_empty_str(chi_arena* arena, size_t size);
+CHI_API CHI_CHECK_RETURN chi_string* chi_arena_create_str(chi_arena* arena, const char* data, ...);
+CHI_API CHI_CHECK_RETURN void* chi_arena_create_ptr(chi_arena* arena, size_t size);
+CHI_API void chi_arena_free(chi_arena* arena, void* ptr_or_chi_str);
+CHI_API bool chi_arena_load(chi_arena* arena, void* ptr, bool is_chi);
 
 /* CHI STRING END */
 

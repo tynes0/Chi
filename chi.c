@@ -10,22 +10,17 @@
 #include <stdarg.h>
 #include <time.h>
 
-#define alloc_a_chi_str()                               ((chi_string*)malloc(sizeof(chi_string)))
-#define alloc_str_ptr(size)                             ((char*)malloc(size + 1))
-#define realloc_str_ptr(block, size)                    ((char*)realloc(block, size + 1))
+#ifdef max
+#undef max
+#endif // max
+
+#ifdef min
+#undef min
+#endif // min
 
 #define alloc_assert(block)                             chi_assert(block != NULL, "Allocation failed!")
 #define data_assert(block)                              chi_assert(block != NULL, "NULL data!")
 #define chi_str_assert(block)                           chi_assert(block != NULL, "NULL chi_string!")
-
-#define zero_memory(block, size)                        (memset(block, 0, size))
-#define copy_to_chi(chi, block)                         (memcpy((chi)->data, block, (chi)->size + 1))
-#define copy_from_chi(chi, block)                       (memcpy(block, (chi)->data, (chi)->size + 1))
-
-#define push_chi(chi)                                   do { _add_ptr_to_list(&s_string_list, chi); _add_ptr_to_list(_top_list(s_string_list_array), chi); } while(0)
-#define pop_chi(chi)                                    do { _remove_ptr_from_list(&s_string_list, chi); _remove_ptr_from_list(_top_list(s_string_list_array), chi); } while(0)
-#define push_ptr(ptr)                                   do { _add_ptr_to_list(&s_other_pointer_list, ptr); _add_ptr_to_list(_top_list(s_other_pointer_list_array), ptr); } while(0)
-#define pop_ptr(ptr)                                    do { _remove_ptr_from_list(&s_other_pointer_list, ptr); _remove_ptr_from_list(_top_list(s_other_pointer_list_array), ptr); } while(0)
 
 #define _swap_(type, left, right)                       do { type temp = left; left = right; right = temp; } while(0)
 #define _swap_ptr_(type, left, right)                   do { type temp = *left; *left = *right; *right = temp; } while(0)
@@ -51,22 +46,7 @@
 
 #define vformat_from(from, chi_str)                     do { if(s_no_format_item_count) { s_no_format_item_count--; } else { va_list arg_list; va_start(arg_list, from); _chi_vformat(chi_str, arg_list); va_end(arg_list); } } while(0)
 
-/* hash constants */
-#if defined(_WIN64)
-static const size_t offset_basis = 14695981039346656037ull;
-static const size_t prime = 1099511628211ull;
-#else // !defined(_WIN64)
-static const size_t offset_basis = 2166136261u;
-static const size_t prime = 16777619u;
-#endif // defined(_WIN64)
-/* hash constants */
-
-extern bool g_check_n = false;
-
-static bool s_rand_initialized = false;
-static bool s_ignore_space = false;
-static uint32_t s_no_format_item_count = 0;
-
+/* structures begin */
 struct _chi_string
 {
     char* data;
@@ -74,33 +54,91 @@ struct _chi_string
     size_t capacity;
 };
 
-static const chi_string s_chi_snull = { .data = NULL, .size = 0, .capacity = 0 };
-const chi_string* chi_snull = &s_chi_snull;
-
-typedef struct
+struct _chi_arena
 {
     void** data;
     size_t count;
     size_t capacity;
-}pointer_list;
+    bool is_active;
+    bool* is_chi;
+};
 
 typedef struct
 {
-    pointer_list* pointer_lists;
+    chi_arena* arenas;
     size_t count;
     size_t capacity;
-}pointer_list_array;
+}arena_array;
+/* structures end */
 
-static const size_t minimum_list_capacity = 32;
-static const size_t minimum_list_array_capacity = 8;
+/* const - static - extern variables begin */
+#if defined(_WIN64)
+static const size_t _hash_offset_basis = 14695981039346656037ull;
+static const size_t _hash_prime = 1099511628211ull;
+#else // !defined(_WIN64)
+static const size_t _hash_offset_basis = 2166136261u;
+static const size_t _hash_prime = 16777619u;
+#endif // defined(_WIN64)
 
-static pointer_list s_string_list = { 0 };
-static pointer_list s_other_pointer_list = { 0 };
+static const size_t MIN_ARENA_CAP = 32;
+static const size_t MIN_ARENA_ARRAY_CAP = 8;
 
-static pointer_list_array s_string_list_array = { 0 };
-static pointer_list_array s_other_pointer_list_array = { 0 };
+static const chi_string s_chi_snull = { .data = NULL, .size = 0, .capacity = 0 };
+const chi_string* chi_snull = &s_chi_snull;
+
+extern bool g_check_n = false;
+
+static bool s_rand_initialized = false;
+static uint32_t s_rand_seed = 0;
+
+static bool s_ignore_space = false;
+
+static uint32_t s_no_format_item_count = 0;
+
+static chi_arena s_arena = { 0 };
+static arena_array s_arena_array = { 0 };
+static arena_array s_user_arenas = { 0 };
+/* const - static - extern variables end */
 
 /* UTILS BEGIN */
+
+static chi_string* alloc_a_chi_str()
+{
+    chi_string* result = ((chi_string*)malloc(sizeof(chi_string)));
+    alloc_assert(result);
+    return result;
+}
+
+static char* alloc_str_ptr(size_t size)
+{
+    char* result = ((char*)malloc(size + 1));
+    alloc_assert(result);
+    return result;
+    
+}
+
+static char* realloc_str_ptr(char* block, size_t size)
+{
+    char* result = ((char*)realloc(block, size + 1));
+    alloc_assert(result);
+    return result;
+}
+
+static void zero_memory(void* block, size_t size)
+{
+    memset(block, 0, size);
+}
+
+static void copy_to_chi(chi_string* chi, const void* block)
+{
+    memcpy(chi->data, block, chi->size + 1);
+}
+
+static void copy_from_chi(chi_string* chi, void* block)
+{
+    memcpy(block, (chi)->data, (chi)->size + 1);
+}
+
 size_t CHI_CHECK_RETURN _chi_calculate_capacity(size_t old_cap, size_t new_cap)
 {
     if (old_cap > new_cap)
@@ -114,61 +152,290 @@ size_t CHI_CHECK_RETURN _chi_calculate_capacity(size_t old_cap, size_t new_cap)
 
 _CHI_PRAGMA(warning(push))
 _CHI_PRAGMA(warning(disable : 6011))
-static void _add_ptr_to_list(pointer_list* ptr_list, void* ptr)
+static void _add_ptr_to_arena(chi_arena* arena, void* ptr, bool is_chi)
 {
-    if (ptr_list == NULL)
+    if (arena == NULL)
         return;
-    if (ptr_list->data == NULL)
+    if (!arena->is_active)
+        return;
+    if (arena->data == NULL)
     {
-        ptr_list->data = (void**)malloc(sizeof(void*) * minimum_list_capacity);
-        chi_assert(ptr_list->data, "Chi initialize failed!");
-        ptr_list->count = 0;
-        ptr_list->capacity = minimum_list_capacity;
+        arena->data = (void**)malloc(sizeof(void*) * MIN_ARENA_CAP);
+        arena->is_chi = (bool*)malloc(sizeof(bool) * MIN_ARENA_CAP);
+        chi_assert(arena->data && arena->is_chi, "Chi initialize failed!");
+        arena->count = 0;
+        arena->capacity = MIN_ARENA_CAP;
     }
-    if (ptr_list->count == ptr_list->capacity)
+    if (arena->count == arena->capacity)
     {
-        size_t new_cap = _chi_calculate_capacity(ptr_list->capacity, ptr_list->capacity + 1);
+        size_t new_cap = _chi_calculate_capacity(arena->capacity, arena->capacity + 1);
         void** temp = (void**)malloc(sizeof(void*) * new_cap);
-        chi_assert(temp, "Allocation error!");
-        memcpy(temp, ptr_list->data, sizeof(void*) * ptr_list->count);
-        free(ptr_list->data);
-        ptr_list->data = temp;
-        ptr_list->capacity = new_cap;
+        bool* tempb = (bool*)malloc(sizeof(bool) * new_cap);
+        chi_assert(temp && tempb, "Allocation error!");
+        memcpy(temp, arena->data, sizeof(void*) * arena->count);
+        memcpy(tempb, arena->is_chi, sizeof(bool) * arena->count);
+        free(arena->data);
+        free(arena->is_chi);
+        arena->data = temp;
+        arena->is_chi = tempb;
+        arena->capacity = new_cap;
     }
-    ptr_list->data[ptr_list->count++] = ptr;
+    arena->data[arena->count] = ptr;
+    arena->is_chi[arena->count] = is_chi;
+    arena->count++;
 }
 _CHI_PRAGMA(warning(pop))
 
 // todo decrease capacity
-static bool _remove_ptr_from_list(pointer_list* ptr_list, const void* ptr)
+static bool _remove_ptr_from_arena(chi_arena* arena, const void* ptr, bool* is_chi_result)
 {
-    if (ptr_list == NULL || ptr_list->data == NULL)
+    if (arena == NULL || arena->data == NULL)
         return false;
-    chi_assert(ptr_list->data, "Unexpexted NULL data! Implamentation error!");
-    for (size_t i = 0; i < ptr_list->count; ++i)
+    if (!arena->is_active)
+        return false;
+    chi_assert(arena->data, "Unexpexted NULL data! Implamentation error!");
+    for (size_t i = 0; i < arena->count; ++i)
     {
-        if (ptr_list->data[i] == ptr)
+        if (arena->data[i] == ptr)
         {
-            if (i != ptr_list->count - 1)
-                ptr_list->data[i] = ptr_list->data[ptr_list->count - 1];
-            ptr_list->data[ptr_list->count - 1] = NULL;
-            ptr_list->count--;
+            if (is_chi_result != NULL)
+                *is_chi_result = arena->is_chi[i];
+            if (i != arena->count - 1)
+            {
+                arena->data[i] = arena->data[arena->count - 1];
+                arena->is_chi[i] = arena->is_chi[arena->count - 1];
+            }
+            arena->data[arena->count - 1] = NULL;
+            arena->is_chi[arena->count - 1] = false;
+            arena->count--;
             return true;
         }
     }
     return false;
 }
 
-static pointer_list* _top_list(pointer_list_array list_array)
+static chi_arena* _top_arena(arena_array array)
 {
-    return list_array.count == 0 ? NULL : &list_array.pointer_lists[list_array.count - 1];
+    return array.count == 0 ? NULL : &array.arenas[array.count - 1];
+}
+
+static void _g_push(void* ptr, bool is_chi)
+{
+    if (!s_arena.is_active)
+        s_arena.is_active = true;
+    _add_ptr_to_arena(&s_arena, ptr, is_chi); 
+    _add_ptr_to_arena(_top_arena(s_arena_array), ptr, is_chi);
+}
+
+static void _g_pop(void* ptr)
+{ 
+    _remove_ptr_from_arena(&s_arena, ptr, NULL);
+    _remove_ptr_from_arena(_top_arena(s_arena_array), ptr, NULL);
+}
+
+static void _arena_free_inner_data(chi_arena* arena)
+{
+    if (arena == NULL)
+        return;
+    if (!arena->is_active)
+        return;
+
+    for (size_t i = 0; i < arena->count; ++i)
+    {
+        if (arena->is_chi[i])
+        {
+            chi_free((chi_string*)arena->data[i]);
+        }
+        else
+        {
+            _g_pop(arena->data[i]);
+            free(arena->data[i]);
+        }
+    }
+
+    arena->is_active = false;
+    arena->count = 0;
+}
+
+_CHI_PRAGMA(warning(push))
+_CHI_PRAGMA(warning(disable : 6385))
+static chi_arena* _arena_array_push(arena_array* array)
+{
+    chi_assert(array != NULL, "NULL arena_array!");
+
+    if (array->arenas == NULL)
+    {
+        array->arenas = (chi_arena*)malloc(sizeof(chi_arena) * MIN_ARENA_ARRAY_CAP);
+        chi_assert(array->arenas, "Chi initialize failed!");
+        zero_memory(array->arenas, sizeof(chi_arena) * MIN_ARENA_ARRAY_CAP);
+        array->count = 0;
+        array->capacity = MIN_ARENA_ARRAY_CAP;
+    }
+
+    if (array->count == array->capacity)
+    {
+        size_t new_cap = _chi_calculate_capacity(array->capacity, array->capacity + 1);
+        chi_arena* temp = (chi_arena*)malloc(sizeof(chi_arena) * new_cap);
+        alloc_assert(temp);
+        zero_memory(temp, sizeof(chi_arena) * new_cap);
+        memcpy(temp, array->arenas, sizeof(chi_arena*) * array->count);
+        free(array->arenas);
+        array->arenas = temp;
+        array->capacity = new_cap;
+    }
+
+    for (size_t i = 0; i < array->capacity; ++i)
+    {
+        if (!array->arenas[i].is_active)
+        {
+            array->arenas[i].capacity = MIN_ARENA_CAP;
+            array->arenas[i].count = 0;
+            array->arenas[i].data = NULL;
+            array->arenas[i].is_chi = NULL;
+            array->arenas[i].is_active = true;
+            array->count++;
+            return &array->arenas[i];
+        }
+    }
+
+    return NULL;
+}
+_CHI_PRAGMA(warning(pop))
+
+static void _arena_array_pop(arena_array* array)
+{
+    array->count--;
+    _arena_free_inner_data(&array->arenas[array->count]);
+}
+
+static size_t _arena_array_get_index(arena_array* array, const chi_arena* arena, bool check_valid)
+{
+    size_t index = chi_npos;
+    if (array == NULL || arena == NULL || array->count == 0)
+        return index;
+
+    if (check_valid)
+    {
+        for (size_t i = 0; i < array->count; ++i)
+        {
+            if (&array->arenas[i] == arena)
+            {
+                index = i;
+                break;
+            }
+        }
+    }
+    else
+    {
+        index = arena - array->arenas;
+    }
+    return index;
+}
+
+static void _arena_array_remove(arena_array* array, chi_arena* arena, bool check_valid)
+{
+    if (!arena->is_active)
+        return;
+
+    size_t index = _arena_array_get_index(array, arena, check_valid);
+    if (index == chi_npos)
+        return;
+
+    array->count--;
+    _arena_free_inner_data(&array->arenas[index]);
+}
+
+static void _arena_array_cleanup(arena_array* array, bool free_array_itself, bool free_inner_data)
+{
+    if (array == NULL)
+        return;
+
+    if (array->arenas == NULL)
+    {
+        if (free_array_itself)
+        {
+            free(array);
+            array = NULL;
+        }
+        return;
+    }
+
+    for (size_t i = 0; i < array->count; ++i)
+    {
+        if (array->arenas[i].data != NULL)
+        {
+            if (free_inner_data)
+                _arena_free_inner_data(&array->arenas[i]);
+
+            free(array->arenas[i].data);
+            free(array->arenas[i].is_chi);
+            array->arenas[i].data = NULL;
+            array->arenas[i].is_chi = NULL;
+        }
+    }
+
+    free(array->arenas);
+    array->arenas = NULL;
+
+    if (free_array_itself)
+    {
+        free(array);
+        array = NULL;
+    }
+    else
+    {
+        array->count = 0;
+        array->capacity = 0;
+    }
+}
+
+static chi_string* _chi_arena_create_base(chi_arena* arena, size_t size)
+{
+    chi_string* result = alloc_a_chi_str();
+    _add_ptr_to_arena(arena, result, true);
+    result->data = NULL;
+    if (size == 0)
+    {
+        result->size = result->capacity = 0;
+        return result;
+    }
+    chi_reserve(result, _chi_calculate_capacity(0, size));
+    result->size = size;
+    return result;
+}
+
+static void _chi_arena_free_base(chi_arena* arena, void* data)
+{
+    data_assert(data);
+    bool is_chi = false;
+    if (!_remove_ptr_from_arena(arena, data, &is_chi))
+        return; // think about that
+    if (is_chi)
+    {
+        chi_string* chi_str = (chi_string*)data;
+        if (chi_str->data != NULL)
+        {
+            free(chi_str->data);
+            chi_str->data = NULL;
+        }
+    }
+    
+    free(data);
+    data = NULL;
+}
+
+static void _chi_arena_free_ptr_base(chi_arena* arena, void* ptr)
+{
+    data_assert(ptr);
+    _remove_ptr_from_arena(arena, ptr, NULL);
+    free(ptr);
+    ptr = NULL;
 }
 
 static chi_string* _chi_create_base(size_t size)
 {
     chi_string* result = alloc_a_chi_str();
-    alloc_assert(result);
-    push_chi(result);
+    _g_push(result, true);
     result->data = NULL;
     if (size == 0)
     {
@@ -194,7 +461,6 @@ static chi_string* _chi_insert_data(chi_string* chi_str, size_t idx, const char*
     {
         size_t new_capacity = _chi_calculate_capacity(chi_str->capacity, new_size);
         char* new_data = alloc_str_ptr(new_capacity);
-        alloc_assert(new_data);
 
         memcpy(new_data, chi_str->data, idx);
         memcpy(new_data + idx, data, data_length);
@@ -298,7 +564,6 @@ static chi_string* _chi_remove_data(chi_string* chi_str, const char* delim, size
         return chi_str;
 
     char* temp = alloc_str_ptr(chi_str->capacity);
-    CHECK_NULL2(temp, chi_str);
     size_t idx = 0;
 
     for (size_t i = 0; i < chi_str->size; ++i)
@@ -345,7 +610,6 @@ static chi_string* _chi_replace_data(chi_string* chi_str, size_t begin, size_t e
     {
         size_t new_capacity = _chi_calculate_capacity(chi_str->capacity, chi_str->size + (new_value_size - old_value_size));
         char* temp = alloc_str_ptr(new_capacity);
-        alloc_assert(temp);
         size_t idx = begin;
         if (begin > 0)
             memcpy(temp, chi_str->data, begin - 0);
@@ -483,11 +747,11 @@ static chi_string** _chi_split_data(const chi_string* chi_str, const char* delim
 {
     chi_str_assert(chi_str);
     chi_assert(delim != NULL, "NULL delimeter!");
-    chi_assert(size != NULL, "NULL size_t!");
+    chi_assert(size != NULL, "NULL size!");
     *size = _chi_count_data(chi_str->data, chi_str->size, delim, delim_length, 0, chi_str->size) + 1;
     chi_string** result = (chi_string**)malloc(sizeof(chi_string*) * (*size));
     alloc_assert(result);
-    push_ptr(result);
+    _g_push(result, false);
     size_t offset = 0;
     size_t last_location = 0;
     size_t index = 0;
@@ -528,23 +792,21 @@ static bool _chi_equal_data_ignorecase(const char* lhs, const char* rhs, size_t 
     return true;
 }
 
-static size_t _append_bytes(size_t val, const unsigned char* const first, const size_t count)
+static size_t _hash(size_t val, const unsigned char* const first, const size_t count)
 {
     for (size_t i = 0; i < count; ++i)
     {
         val ^= (size_t)(first[i]);
-        val *= prime;
+        val *= _hash_prime;
     }
     return val;
 }
-
-static uint32_t _chi_rand_seed = 0;
 
 static void _chi_check_rand_seed()
 {
     if (!s_rand_initialized) 
     { 
-        _chi_rand_seed = (uint32_t)time(NULL); 
+        s_rand_seed = (uint32_t)time(NULL); 
         s_rand_initialized = true; 
     }
 }
@@ -553,12 +815,13 @@ static uint32_t _chi_random()
 {
     _chi_check_rand_seed();
 
-    _chi_rand_seed = (1664525 * _chi_rand_seed + 1013904223) & 0xFFFFFFFF;
-    return _chi_rand_seed;
+    s_rand_seed = (1664525 * s_rand_seed + 1013904223) & 0xFFFFFFFF;
+    return s_rand_seed;
 }
 
 static uint32_t _chi_random_in_range(uint32_t min, uint32_t max)
 {
+    chi_assert(max > min, "max should be bigger than min!");
     return (_chi_random() % (max - min)) + min;
 }
 
@@ -698,7 +961,7 @@ __declspec(noreturn) void _chi_assert_show_message(const char* message, const ch
 size_t CHI_CHECK_RETURN chi_hash_s(const char* str)
 {
     data_assert(str);
-    return _append_bytes(offset_basis, (const unsigned char*)(str), strlen(str));
+    return _hash(_hash_offset_basis, (const unsigned char*)(str), strlen(str));
 }
 
 void chi_enable_check_n(bool enable)
@@ -718,23 +981,18 @@ CHI_API void chi_set_next_items_no_format(uint32_t count)
 
 CHI_API void chi_ignore_freeing(void* block)
 {
-    pop_chi(block);
-    pop_ptr(block);
+    _g_pop(block);
 }
 
 CHI_API void chi_add_to_the_free_list(void* block, bool is_chi)
 {
-    if (is_chi)
-        push_chi(block);
-    else
-        push_ptr(block);
+    _g_push(block, is_chi);
 }
 
 CHI_API CHI_CHECK_RETURN chi_string* chi_create(const char* data, ...)
 {
     CHECK_NULL2(data, _chi_create_base(0));
-    size_t temp_size = strlen(data);
-    chi_string* result = _chi_create_base(temp_size);
+    chi_string* result = _chi_create_base(strlen(data));
     copy_to_chi(result, data);
     vformat_from(data, result);
     return result;
@@ -761,8 +1019,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_empty(size_t size)
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_with_capacity(size_t capacity)
 {
     chi_string* result = alloc_a_chi_str();
-    alloc_assert(result);
-    push_chi(result);
+    _g_push(result, true);
     result->data = NULL;
     result->size = 0;
     if (capacity == 0)
@@ -781,7 +1038,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_and_fill(char ch, size_t size)
     chi_string* result = _chi_create_base(size);
     memset(result->data, ch, size);
     result->data[result->size] = 0;
-    push_chi(result);
+    _g_push(result, true);
     return result;
 }
 
@@ -800,11 +1057,10 @@ CHI_CHECK_RETURN chi_string* chi_make_chi(char* data, size_t n, ...)
 {
     data_assert(data);
     chi_string* result = alloc_a_chi_str();
-    alloc_assert(result);
     result->data = data;
     result->size = result->capacity = n;
     result->data[n] = 0;
-    push_chi(result);
+    _g_push(result, true);
     vformat_from(n, result);
     return result;
 }
@@ -813,116 +1069,47 @@ CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t n, size_t capacit
 {
     data_assert(data);
     chi_string* result = alloc_a_chi_str();
-    alloc_assert(result);
     result->data = data;
     result->size = n;
     result->data[n] = 0;
     result->capacity = capacity;
-    push_chi(result);
+    _g_push(result, true);
     vformat_from(capacity, result);
     return result;
 }
 
 void chi_begin_scope()
 {
-    if (s_string_list_array.pointer_lists == NULL)
-    {
-        s_string_list_array.pointer_lists = (pointer_list*)malloc(sizeof(pointer_list) * minimum_list_array_capacity);
-        chi_assert(s_string_list_array.pointer_lists, "Chi initialize failed!");
-        s_string_list_array.count = 0;
-        s_string_list_array.capacity = minimum_list_array_capacity;
-    }
-    if (s_string_list_array.count == s_string_list_array.capacity)
-    {
-        size_t new_cap = _chi_calculate_capacity(s_string_list_array.capacity, s_string_list_array.capacity + 1);
-        pointer_list* temp = (pointer_list*)malloc(sizeof(pointer_list) * new_cap);
-        chi_assert(temp, "Allocation error!");
-        memcpy(temp, s_string_list_array.pointer_lists, sizeof(pointer_list*) * s_string_list_array.count);
-        free(s_string_list_array.pointer_lists);
-        s_string_list_array.pointer_lists = temp;
-        s_string_list_array.capacity = new_cap;
-    }
-    s_string_list_array.pointer_lists[s_string_list_array.count].capacity = minimum_list_capacity;
-    s_string_list_array.pointer_lists[s_string_list_array.count].count = 0;
-    s_string_list_array.pointer_lists[s_string_list_array.count].data = NULL;
-    s_string_list_array.count++;
-
-    if (s_other_pointer_list_array.pointer_lists == NULL)
-    {
-        s_other_pointer_list_array.pointer_lists = (pointer_list*)malloc(sizeof(pointer_list) * minimum_list_array_capacity);
-        chi_assert(s_other_pointer_list_array.pointer_lists, "Chi initialize failed!");
-        s_other_pointer_list_array.count = 0;
-        s_other_pointer_list_array.capacity = minimum_list_array_capacity;
-    }
-    if (s_other_pointer_list_array.count == s_other_pointer_list_array.capacity)
-    {
-        size_t new_cap = _chi_calculate_capacity(s_other_pointer_list_array.capacity, s_other_pointer_list_array.capacity + 1);
-        pointer_list* temp = (pointer_list*)malloc(sizeof(pointer_list) * new_cap);
-        chi_assert(temp, "Allocation error!");
-        memcpy(temp, s_other_pointer_list_array.pointer_lists, sizeof(pointer_list*) * s_other_pointer_list_array.count);
-        free(s_other_pointer_list_array.pointer_lists);
-        s_other_pointer_list_array.pointer_lists = temp;
-        s_other_pointer_list_array.capacity = new_cap;
-    }
-    s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].capacity = minimum_list_capacity;
-    s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].count = 0;
-    s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].data = NULL;
-    s_other_pointer_list_array.count++;
+    _arena_array_push(&s_arena_array);
 }
 
 // TODO decrease cap
 void chi_end_scope()
 {
-    chi_assert(s_string_list_array.count > 0 && s_other_pointer_list_array.count > 0, "chi_end_scope() called on empty stack!");
-    s_string_list_array.count--;
-    for (size_t i = 0; i < s_string_list_array.pointer_lists[s_string_list_array.count].count; ++i)
-        chi_free((chi_string*)s_string_list_array.pointer_lists[s_string_list_array.count].data[i]);
-    s_string_list_array.pointer_lists[s_string_list_array.count].count = 0;
-
-    s_other_pointer_list_array.count--;
-    for (size_t i = 0; i < s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].count; ++i)
-    {
-        pop_ptr(s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].data[i]);
-        free(s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].data[i]);
-    }
-    s_other_pointer_list_array.pointer_lists[s_other_pointer_list_array.count].count = 0;
+    chi_assert(s_arena_array.count > 0, "chi_end_scope() called on empty stack!");
+    _arena_array_pop(&s_arena_array);
 }
 
 CHI_API void chi_cleanup()
 {
-    for (size_t i = 0; i < s_string_list.count; ++i)
-        chi_free((chi_string*)s_string_list.data[i]);
-    s_string_list.count = 0;
-    zero_memory(s_string_list_array.pointer_lists, s_string_list_array.count);
-    s_string_list_array.count = 0;
-    for (size_t i = 0; i < s_other_pointer_list.count; ++i)
-    {
-        pop_ptr(s_other_pointer_list.data[i]);
-        free(s_other_pointer_list.data[i]);
-    }
-    s_other_pointer_list.count = 0;
-    zero_memory(s_other_pointer_list_array.pointer_lists, s_other_pointer_list_array.count);
-    s_other_pointer_list_array.count = 0;
+    _arena_free_inner_data(&s_arena);
+    s_arena.is_active = true; // always active
+
+    _arena_array_cleanup(&s_arena_array, false, false);
+    _arena_array_cleanup(&s_user_arenas, false, true);
 }
 
 CHI_API void chi_free(chi_string* chi_str)
 {
-    chi_str_assert(chi_str);
-    pop_chi(chi_str);
-    if (chi_str->data != NULL)
-    {
-        free(chi_str->data);
-        chi_str->data = NULL;
-    }
-    free(chi_str);
-    chi_str = NULL;
+    _chi_arena_free_base(&s_arena, chi_str);
+    _remove_ptr_from_arena(_top_arena(s_arena_array), chi_str, NULL);
 }
 
 CHI_API void chi_str_array_free(chi_string** chi_str_array, size_t size)
 {
-    while (size--)
+    while (size--) // If the size is incorrect, undefined behavior occurs
         chi_free(chi_str_array[size]);
-    pop_ptr(chi_str_array); // Note that: If it is a pointer produced by Chi functions and found in lists, it is deleted from the lists.
+    _g_pop(chi_str_array); // Note that: If it is a pointer produced by Chi functions and found in lists, it is deleted from the lists.
     free(chi_str_array);
     chi_str_array = NULL;
 }
@@ -972,7 +1159,6 @@ CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap)
     if (chi_str->data == NULL)
     {
         chi_str->data = alloc_str_ptr(new_cap);
-        chi_assert(chi_str->data, "Allocation error!");
         chi_str->capacity = new_cap;
         chi_str->size = 0;
         return;
@@ -982,7 +1168,6 @@ CHI_API void chi_reserve(chi_string* chi_str, size_t new_cap)
         return;
 
     char* new_data = realloc_str_ptr(chi_str->data, new_cap);
-    chi_assert(new_data, "Allocation error!");
     chi_str->data = new_data;
     chi_str->capacity = new_cap;
 }
@@ -996,7 +1181,6 @@ CHI_API void chi_shrink_to_fit(chi_string* chi_str)
         return;
 
     char* new_data = alloc_str_ptr(chi_str->size);
-    chi_assert(new_data, "Allocation error!");
     copy_from_chi(chi_str, new_data);
     free(chi_str->data);
     chi_str->data = new_data;
@@ -1286,6 +1470,19 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_substring(const chi_string* chi_str, si
     return chi_create_n(chi_str->data + offset, length);
 }
 
+CHI_API void chi_substring_to(const chi_string* chi_str, chi_string* dest, size_t offset, size_t length)
+{
+    chi_str_assert(chi_str);
+    CHECK_NULL2(chi_str->data, );
+    chi_assert(offset < chi_str->size, "offset is out of the range!");
+
+    // same with CHECK_N but always enable
+    if (offset + length > chi_str->size)
+        length = chi_str->size - offset;
+
+    chi_reset_n(dest, chi_str->data + offset, length);
+}
+
 CHI_API CHI_CHECK_RETURN chi_string** chi_split(const chi_string* chi_str, size_t* size)
 {
     return _chi_split_data(chi_str, " ", 1, size);
@@ -1321,7 +1518,6 @@ chi_string* chi_remove_repated(chi_string* chi_str)
     if (chi_str->data == NULL || chi_str->size == 0)
         return chi_str;
     char* temp = alloc_str_ptr(chi_str->capacity);
-    CHECK_NULL2(temp, chi_str);
     size_t idx = 0;
     unsigned char ascii[256] = { 0 };
     for (size_t i = 0; i < chi_str->size; ++i)
@@ -1597,7 +1793,7 @@ CHI_API CHI_CHECK_RETURN size_t chi_hash(const chi_string* chi_str)
 {
     chi_str_assert(chi_str);
     CHECK_NULL2(chi_str->data, 0);
-    return _append_bytes(offset_basis, (const unsigned char*)(chi_str->data), chi_str->size);
+    return _hash(_hash_offset_basis, (const unsigned char*)(chi_str->data), chi_str->size);
 }
 
 CHI_API chi_string* chi_for_each_ip(chi_string* chi_str, size_t begin, size_t end, void(*pred)(char*))
@@ -1974,6 +2170,70 @@ CHI_API void chi_format(chi_string* chi_str, ...)
     va_end(arg_list);
 }
 
+CHI_API CHI_CHECK_RETURN chi_arena* chi_use_arena()
+{
+    return _arena_array_push(&s_user_arenas);
+}
+
+CHI_API void chi_unuse_arena(chi_arena* arena)
+{
+    _arena_array_remove(&s_user_arenas, arena, true);
+}
+
+CHI_API CHI_CHECK_RETURN bool chi_arena_is_using(const chi_arena* arena)
+{
+    return arena->is_active;
+}
+
+CHI_API CHI_CHECK_RETURN chi_string* chi_arena_create_empty_str(chi_arena* arena, size_t size)
+{
+    CHECK_NULL(arena);
+    if (!arena->is_active)
+        return NULL;
+    return _chi_arena_create_base(arena, size);
+}
+
+CHI_API CHI_CHECK_RETURN chi_string* chi_arena_create_str(chi_arena* arena, const char* data, ...)
+{
+    CHECK_NULL(arena);
+    if (!arena->is_active)
+        return NULL;
+    CHECK_NULL2(data, _chi_arena_create_base(arena, 0));
+    chi_string* result = _chi_arena_create_base(arena, strlen(data));
+    copy_to_chi(result, data);
+    vformat_from(data, result);
+    return result;
+}
+
+CHI_API CHI_CHECK_RETURN void* chi_arena_create_ptr(chi_arena* arena, size_t size)
+{
+    CHECK_NULL(arena);
+    if (size == 0)
+        return NULL;
+    if (!arena->is_active)
+        return NULL;
+    void* buf = malloc(size);
+    alloc_assert(buf);
+    _add_ptr_to_arena(arena, buf, false);
+    return buf;
+}
+
+CHI_API void chi_arena_free(chi_arena* arena, void* ptr_or_chi_str)
+{
+    _chi_arena_free_base(arena, ptr_or_chi_str);
+}
+
+CHI_API bool chi_arena_load(chi_arena* arena, void* ptr, bool is_chi)
+{
+    if (arena->is_active)
+    {
+        _g_pop(ptr);
+        _add_ptr_to_arena(arena, ptr, is_chi);
+        return true;
+    }
+    return false;
+}
+
 CHI_API CHI_CHECK_RETURN chi_string_view chi_sv(const char* data)
 {
     CHECK_NULL2(data, CHI_SVNULL);
@@ -2208,7 +2468,7 @@ CHI_API CHI_CHECK_RETURN unsigned long long chi_sv_toull(chi_string_view sv)
 CHI_API CHI_CHECK_RETURN size_t chi_sv_hash(chi_string_view sv)
 {
     CHECK_NULL2(sv.data, 0);
-    return _append_bytes(offset_basis, (const unsigned char*)(sv.data), sv.size);
+    return _hash(_hash_offset_basis, (const unsigned char*)(sv.data), sv.size);
 }
 
 CHI_API CHI_CHECK_RETURN size_t chi_sv_count_ip(chi_string_view sv, char ch, size_t begin, size_t end)

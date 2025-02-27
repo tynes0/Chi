@@ -3,23 +3,10 @@
 
 #include <string.h>
 
-#define alloc_a_chi_str()           (chi_string*)malloc(sizeof(chi_string)) 
-#define alloc_str_ptr(size)         (char*)malloc(size + 1)
-#define copy_to_chi(chi, block)     memcpy((chi)->data, block, (chi)->size + 1)
-
 #define file_assert(block)          chi_assert(block != NULL, "NULL FILE!");
 #define chi_str_assert(block)       chi_assert(block != NULL, "NULL chi_string!")
-#define alloc_assert(block)         chi_assert(block != NULL, "Allocation failed!")
-#define data_assert(block)          chi_assert(block != NULL, "NULL data!")
-
-#define if_null_write_empty(data, file)         do { if(data == NULL) { return _write_data("", 1, file); } } while(0)
-#define if_null_write_empty_fp(data, fp, om)    do { if(data == NULL) { return _write_data_fp("", 1, fp, om); } } while(0)
-#define CHECK_NULL(ptr, retval)                 do { if(ptr == NULL) { return retval; } } while(0)
-#define CHECK_N(ptr, n)                         do { if(g_check_n) { size_t len = strlen(ptr); if(len < n) { n = len; } } } while(0)
 
 #define MAX_BUFFER_LEN 8192
-
-extern bool g_check_n;
 
 struct _chi_string
 {
@@ -118,7 +105,8 @@ bool chi_write(const chi_string* chi_str, FILE* file)
 {
     chi_str_assert(chi_str);
     file_assert(file);
-    if_null_write_empty(chi_str->data, file);
+    if (chi_str->data == NULL)
+        return _write_data("", 1, file);
     return _write_data(chi_str->data, chi_str->size, file);
 }
 
@@ -126,7 +114,8 @@ bool chi_write_fp(const chi_string* chi_str, const char* filepath)
 {
     chi_str_assert(chi_str);
     chi_assert(filepath != NULL, "NULL filepath!");
-    if_null_write_empty_fp(chi_str->data, filepath, "w+");
+    if (chi_str->data == NULL)
+        return _write_data_fp("", 1, filepath, "w+");
     return _write_data_fp(chi_str->data, chi_str->size, filepath, "w+");
 }
 
@@ -134,7 +123,8 @@ CHI_API bool chi_app_to(const chi_string* chi_str, const char* filepath)
 {
     chi_str_assert(chi_str);
     chi_assert(filepath != NULL, "NULL filepath!");
-    if_null_write_empty_fp(chi_str->data, filepath, "a+");
+    if (chi_str->data == NULL)
+        return _write_data_fp("", 1, filepath, "a+");
     return _write_data_fp(chi_str->data, chi_str->size, filepath, "a+");
 }
 
