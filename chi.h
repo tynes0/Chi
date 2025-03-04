@@ -111,6 +111,12 @@ typedef struct _chi_string_view chi_string_view;
 
 typedef struct _chi_arena chi_arena;
 
+typedef enum
+{
+    CHI_BOOL_FORMAT_DECIMAL = 0,
+    CHI_BOOL_FORMAT_TEXT = 1
+}CHI_BOOL_FORMAT_;
+
 /* main structs end */
 
 /**
@@ -129,13 +135,6 @@ extern const chi_string* chi_snull;
 static const chi_string_view chi_svnull = { NULL, 0 };
 
 /* helper macros begin */
-
-/**
- * @brief Creates an empty `chi_string`.
- *
- * @return Returns a `chi_string` instance.
- */
-#define chichi() chi_create_empty(0)
 
 /**
  * @brief Returns a null `chi_string`.
@@ -249,6 +248,8 @@ CHI_API void chi_ignore_spaces(bool ignore);
  */
 CHI_API void chi_set_next_items_no_format(uint32_t count);
 
+CHI_API void chi_set_bool_format(CHI_BOOL_FORMAT_ format);
+
 /**
  * @brief Removes a memory block from cleanup operations.
  *
@@ -333,14 +334,31 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_create_from_chi_s(const chi_string* chi
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_create_from_chi_sv(chi_string_view chi_sv);
 
+/**
+ * @brief Creates an empty `chi_string`.
+ *
+ * @return Returns a `chi_string` instance.
+ */
+CHI_API CHI_CHECK_RETURN chi_string* chichi();
+
+/**
+ * @brief Wraps an existing character array in a chi_string with a specified size.
+ * Note: This function may be unsafe if the data is not properly managed.
+ * 
+* @return Returns a `chi_string` instance.
+ */
 CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi(char* data, size_t n, ...);
 
 /**
  * @brief Wraps an existing character array in a chi_string with a specified size and capacity.
  * Note: This function may be unsafe if the data is not properly managed.
-
+ * 
+ * * @return Returns a `chi_string` instance.
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_make_chi_c(char* data, size_t n, size_t capacity, ...);
+
+CHI_API CHI_CHECK_RETURN void* chi_create_ptr(size_t size);
+CHI_API CHI_CHECK_RETURN void chi_free_ptr(void* ptr);
 
 /**
  * @brief Begins a scope for chi_string operations.
@@ -860,8 +878,6 @@ CHI_API chi_string* chi_copy(chi_string* chi_str, const chi_string* src_cs);
  * @return Returns a new `chi_string` structure if successful, otherwise returns `NULL`.
  */
 CHI_API CHI_CHECK_RETURN chi_string* chi_substring(const chi_string* chi_str, size_t offset, size_t length);
-
-CHI_API void chi_substring_to(const chi_string* chi_str, chi_string* dest, size_t offset, size_t length);
 
 /**
  * @brief Splits the chi_string by spaces.
@@ -1863,6 +1879,7 @@ CHI_API CHI_CHECK_RETURN chi_string* chi_arena_create_str(chi_arena* arena, cons
 CHI_API CHI_CHECK_RETURN void* chi_arena_create_ptr(chi_arena* arena, size_t size);
 CHI_API void chi_arena_free(chi_arena* arena, void* ptr_or_chi_str);
 CHI_API bool chi_arena_load(chi_arena* arena, void* ptr, bool is_chi);
+CHI_API CHI_CHECK_RETURN chi_string* chi_arena_substring(chi_arena* arena, const chi_string* chi_str, size_t offset, size_t length);
 
 /* CHI STRING END */
 

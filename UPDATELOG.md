@@ -78,3 +78,14 @@
 * Update 2.6.5: The ptr-chi_string distinction in the implementation has been removed. There is no need to use separate arenas for both anymore. It will be possible to track ptr or chi_string in a single arena.
 * Update 2.6.6: Some implementation issues have been fixed. Some unnecessary codes have been removed.
 * Update 2.6.7: The part containing variables and structures in the chi.c file has been made more organized.
+* Update 2.7.0: Formating for bool has been added to chi_format - chi_create ext.
+* Update 2.7.1: chi_substring_to function has been removed. chi_arena_substring function has been added.
+* Update 2.7.2: Fixed a buffer overflow issue in the chi_replace_ip function.
+* Update 2.7.3: Fixed incorrect sizing issue in chi_reset... functions.
+* Update 2.7.4: Removed unnecessary macro usage in chi_to.. and chi_sv_to.. implementations.
+* Update 2.7.5: Removed _swap _swap_ptr macros.
+* Update 2.7.6: Fixed an issue where scopes would break when creating formatted strings.
+* Update 2.7.7: CHI_BOOL_FORMAT_ enum and chi_set_bool_format function has been added.
+* Update 2.7.8: The problem of not adding null characters to the end of strings in chi_reset... and chi_copy calls has been fixed.
+* Update 2.7.9: Added missed chi_make_chi description.
+* Update 2.7.10: Added chi_create_ptr and chi_free_ptr functions.
